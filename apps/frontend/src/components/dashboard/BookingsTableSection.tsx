@@ -10,6 +10,7 @@ interface BookingsTableSectionProps {
   previousBookingsCount: number;
   onOpenCreateModal: () => void;
   onSelectBookingForQR: (booking: FarmerBookingItem) => void;
+  hideHeader?: boolean;
 }
 
 function statusLabel(status: FarmerBookingItem["status"]) {
@@ -34,55 +35,58 @@ export const BookingsTableSection = memo(function BookingsTableSection({
   previousBookingsCount,
   onOpenCreateModal,
   onSelectBookingForQR,
+  hideHeader = false,
 }: BookingsTableSectionProps) {
   return (
-    <div className="w-full bg-white rounded-3xl border border-[#E8EAEC] p-6 sm:p-7 shadow-sm text-left space-y-5">
+    <div className={`w-full bg-white rounded-3xl border border-[#E8EAEC] ${hideHeader ? "p-4 sm:p-5" : "p-6 sm:p-7 space-y-5"} shadow-sm text-left`}>
       {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F1F3F5] pb-4">
-        <div>
-          <h2 className="text-lg sm:text-xl font-bold text-[#0B2D1B] flex items-center gap-2">
-            <span>
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F1F3F5] pb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-[#0B2D1B] flex items-center gap-2">
+              <span>
+                {activeTab === "current"
+                  ? "Active Unloading Bookings"
+                  : "Previous Bookings History"}
+              </span>
+              <span className="text-xs font-bold text-[#059669] bg-[#E8F5E9] px-2.5 py-0.5 rounded-full border border-emerald-200">
+                {displayedList.length} Records
+              </span>
+            </h2>
+            <p className="text-xs text-[#5A6C5F] mt-0.5">
               {activeTab === "current"
-                ? "Active Unloading Bookings"
-                : "Previous Bookings History"}
-            </span>
-            <span className="text-xs font-bold text-[#059669] bg-[#E8F5E9] px-2.5 py-0.5 rounded-full border border-emerald-200">
-              {displayedList.length} Records
-            </span>
-          </h2>
-          <p className="text-xs text-[#5A6C5F] mt-0.5">
-            {activeTab === "current"
-              ? "Track live gate arrivals, allocated weighbridge hoppers, and download e-tokens."
-              : "Review historical produce deliveries, weighbridge slips, and settled payouts."}
-          </p>
-        </div>
+                ? "Track live gate arrivals, allocated weighbridge hoppers, and download e-tokens."
+                : "Review historical produce deliveries, weighbridge slips, and settled payouts."}
+            </p>
+          </div>
 
-        {/* Tab Pill Switcher */}
-        <div className="flex p-1 bg-[#F4F4F2] border border-[#E8EAEC] rounded-xl self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => onTabChange("current")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              activeTab === "current"
-                ? "bg-white text-[#0B2D1B] shadow-xs"
-                : "text-[#5A6C5F] hover:text-[#0B2D1B]"
-            }`}
-          >
-            Active Bookings ({currentBookingsCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("previous")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              activeTab === "previous"
-                ? "bg-[#0B2D1B] text-white shadow-xs"
-                : "text-[#5A6C5F] hover:text-[#0B2D1B]"
-            }`}
-          >
-            Previous History ({previousBookingsCount})
-          </button>
+          {/* Tab Pill Switcher */}
+          <div className="flex p-1 bg-[#F4F4F2] border border-[#E8EAEC] rounded-xl self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => onTabChange("current")}
+              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === "current"
+                  ? "bg-white text-[#0B2D1B] shadow-xs"
+                  : "text-[#5A6C5F] hover:text-[#0B2D1B]"
+              }`}
+            >
+              Active Bookings ({currentBookingsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("previous")}
+              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === "previous"
+                  ? "bg-[#0B2D1B] text-white shadow-xs"
+                  : "text-[#5A6C5F] hover:text-[#0B2D1B]"
+              }`}
+            >
+              Previous History ({previousBookingsCount})
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Bookings List Table */}
       {displayedList.length === 0 ? (
