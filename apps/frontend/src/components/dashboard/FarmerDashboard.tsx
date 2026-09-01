@@ -33,6 +33,7 @@ export interface SuggestedMandi {
   id: string;
   name: string;
   district: string;
+  state: string;
   distanceKm: number;
   operatingHours: string;
   bestCrop: string;
@@ -41,6 +42,9 @@ export interface SuggestedMandi {
   availableSlotsToday: number;
   recommendedSlotTime: string;
   badge?: string;
+  lat: number;
+  lng: number;
+  imageUrl: string;
 }
 
 export interface YardMessage {
@@ -173,6 +177,7 @@ export const SUGGESTED_MANDIS: SuggestedMandi[] = [
     id: "m-1",
     name: "Indore APMC Central Grain Yard",
     district: "Indore, MP",
+    state: "Madhya Pradesh",
     distanceKm: 4.8,
     operatingHours: "07:00 AM - 06:00 PM",
     bestCrop: "Wheat (Sharbati)",
@@ -181,11 +186,15 @@ export const SUGGESTED_MANDIS: SuggestedMandi[] = [
     availableSlotsToday: 8,
     recommendedSlotTime: "Today • 03:00 PM - 04:30 PM",
     badge: "Fastest Clearance",
+    lat: 22.7196,
+    lng: 75.8577,
+    imageUrl: "/images/mandis/indore.jpg",
   },
   {
     id: "m-2",
     name: "Ujjain Krishi Upaj Mandi",
     district: "Ujjain, MP",
+    state: "Madhya Pradesh",
     distanceKm: 14.2,
     operatingHours: "08:00 AM - 05:30 PM",
     bestCrop: "Soybean (Yellow)",
@@ -194,24 +203,32 @@ export const SUGGESTED_MANDIS: SuggestedMandi[] = [
     availableSlotsToday: 5,
     recommendedSlotTime: "Today • 04:00 PM - 05:30 PM",
     badge: "Highest Bidder",
+    lat: 23.1765,
+    lng: 75.7885,
+    imageUrl: "/images/mandis/ujjain.jpg",
   },
   {
     id: "m-3",
     name: "Dewas APMC Terminal",
     district: "Dewas, MP",
+    state: "Madhya Pradesh",
     distanceKm: 18.6,
     operatingHours: "07:30 AM - 06:00 PM",
-    bestCrop: "Basmati Rice 1121",
+    bestCrop: "Wheat (Lokwan)",
     currentRateQtl: 3850,
     mspRateQtl: 3200,
     availableSlotsToday: 12,
     recommendedSlotTime: "Tomorrow • 09:00 AM - 10:30 AM",
     badge: "Zero Gate Line",
+    lat: 22.9623,
+    lng: 76.0508,
+    imageUrl: "/images/mandis/dewas.jpg",
   },
   {
     id: "m-4",
     name: "Dhar District Grain Mandi",
     district: "Dhar, MP",
+    state: "Madhya Pradesh",
     distanceKm: 28.0,
     operatingHours: "08:00 AM - 04:30 PM",
     bestCrop: "Mustard (Sarson)",
@@ -219,6 +236,42 @@ export const SUGGESTED_MANDIS: SuggestedMandi[] = [
     mspRateQtl: 5450,
     availableSlotsToday: 9,
     recommendedSlotTime: "Tomorrow • 11:30 AM - 01:00 PM",
+    lat: 22.5977,
+    lng: 75.3025,
+    imageUrl: "/images/mandis/dhar.jpg",
+  },
+  {
+    id: "m-5",
+    name: "Ratlam APMC Mandi",
+    district: "Ratlam, MP",
+    state: "Madhya Pradesh",
+    distanceKm: 36.0,
+    operatingHours: "07:00 AM - 05:00 PM",
+    bestCrop: "Chana (Gram)",
+    currentRateQtl: 4620,
+    mspRateQtl: 4400,
+    availableSlotsToday: 6,
+    recommendedSlotTime: "Tomorrow • 10:00 AM - 11:30 AM",
+    lat: 23.3340,
+    lng: 75.0367,
+    imageUrl: "/images/mandis/ratlam.jpg",
+  },
+  {
+    id: "m-6",
+    name: "Khargone Mandi",
+    district: "Khargone, MP",
+    state: "Madhya Pradesh",
+    distanceKm: 52.0,
+    operatingHours: "08:00 AM - 04:00 PM",
+    bestCrop: "Soybean (JS-9560)",
+    currentRateQtl: 4780,
+    mspRateQtl: 4600,
+    availableSlotsToday: 4,
+    recommendedSlotTime: "Tomorrow • 08:30 AM - 10:00 AM",
+    badge: "Reliable Yard",
+    lat: 21.8235,
+    lng: 75.6164,
+    imageUrl: "/images/mandis/khargone.jpg",
   },
 ];
 
