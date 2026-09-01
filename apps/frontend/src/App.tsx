@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAppSelector } from "./store";
 import { AuthPageContent } from "./components/AuthPageContent";
-import { FarmerDashboard } from "./components/dashboard/FarmerDashboard";
+import { FarmerDashboardShell } from "./components/dashboard/FarmerDashboardShell";
 import { MandiOperatorDashboard } from "./components/dashboard/MandiOperatorDashboard";
 
 export function App() {
@@ -31,5 +31,5 @@ export function App() {
   }
 
   // Default to Farmer Dashboard
-  return <FarmerDashboard />;
+  return <FarmerDashboardShell />;
 }

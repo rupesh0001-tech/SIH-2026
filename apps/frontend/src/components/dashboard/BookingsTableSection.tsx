@@ -12,6 +12,20 @@ interface BookingsTableSectionProps {
   onSelectBookingForQR: (booking: FarmerBookingItem) => void;
 }
 
+function statusLabel(status: FarmerBookingItem["status"]) {
+  if (status === "ARRIVED" || status === "VERIFIED") return "Gate Arrived";
+  if (status === "IN_TRANSIT") return "In Transit";
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function statusClass(status: FarmerBookingItem["status"]) {
+  if (status === "PENDING") return "bg-amber-50 text-amber-700 border-amber-200";
+  if (status === "ACCEPTED") return "bg-blue-50 text-blue-700 border-blue-200";
+  if (status === "IN_TRANSIT") return "bg-purple-50 text-purple-700 border-purple-200";
+  if (status === "ARRIVED" || status === "VERIFIED") return "bg-teal-50 text-teal-700 border-teal-200";
+  return "bg-[#E8F5E9] text-[#059669] border-emerald-200";
+}
+
 export const BookingsTableSection = memo(function BookingsTableSection({
   activeTab,
   onTabChange,
@@ -90,7 +104,7 @@ export const BookingsTableSection = memo(function BookingsTableSection({
           {displayedList.map((booking) => (
             <div
               key={booking.id}
-              className="py-4.5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-[#FCFCFA] px-2 rounded-2xl transition-colors"
+              className="flex flex-col gap-4 rounded-2xl border border-[#E8EAEC] bg-white p-4 transition-colors hover:bg-[#FCFCFA] md:border-0 md:px-2 md:py-4.5 lg:flex-row lg:items-center lg:justify-between"
             >
               {/* Left: Token & Crop Details */}
               <div className="flex items-start sm:items-center gap-3.5">
@@ -110,17 +124,19 @@ export const BookingsTableSection = memo(function BookingsTableSection({
 
                     {/* Status Badge */}
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
                         booking.status === "ARRIVED" || booking.status === "VERIFIED"
-                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          ? "bg-teal-50 text-teal-700 border-teal-200"
                           : booking.status === "IN_TRANSIT"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
                           : booking.status === "COMPLETED"
                           ? "bg-[#E8F5E9] text-[#059669] border-emerald-200"
+                          : booking.status === "ACCEPTED"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
                           : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
-                      {booking.status === "ARRIVED" ? "✓ Gate 02 Arrived" : booking.status}
+                      {statusLabel(booking.status)}
                     </span>
                   </div>
 
@@ -156,7 +172,7 @@ export const BookingsTableSection = memo(function BookingsTableSection({
 
               {/* Right: Actions */}
               <div className="flex items-center gap-2.5 pl-15 lg:pl-0 shrink-0">
-                <div className="text-right mr-2 hidden sm:block">
+                <div className="mr-2 text-right">
                   <div className="text-xs font-bold text-[#0B2D1B]">
                     ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
                   </div>

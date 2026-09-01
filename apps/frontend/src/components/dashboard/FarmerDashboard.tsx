@@ -53,7 +53,7 @@ export interface YardMessage {
 }
 
 // ================= STATIC MOCK DATA =================
-const INITIAL_BOOKINGS: FarmerBookingItem[] = [
+export const INITIAL_BOOKINGS: FarmerBookingItem[] = [
   {
     id: "b-1",
     tokenId: "TKN-7821",
@@ -168,7 +168,7 @@ const INITIAL_BOOKINGS: FarmerBookingItem[] = [
   },
 ];
 
-const SUGGESTED_MANDIS: SuggestedMandi[] = [
+export const SUGGESTED_MANDIS: SuggestedMandi[] = [
   {
     id: "m-1",
     name: "Indore APMC Central Grain Yard",
@@ -222,7 +222,7 @@ const SUGGESTED_MANDIS: SuggestedMandi[] = [
   },
 ];
 
-const RECENT_MESSAGES: YardMessage[] = [
+export const RECENT_MESSAGES: YardMessage[] = [
   {
     id: "msg-1",
     title: "Gate 02 Entry Pass Verified",
