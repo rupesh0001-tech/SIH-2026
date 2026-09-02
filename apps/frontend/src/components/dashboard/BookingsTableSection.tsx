@@ -1,5 +1,12 @@
-import React, { memo } from "react";
-import { Calendar, Clock, QrCode } from "lucide-react";
+import React, { memo, useState } from "react";
+import {
+  ArrowUpDown,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  QrCode,
+  Calendar,
+} from "lucide-react";
 import type { FarmerBookingItem } from "../../interfaces";
 
 interface BookingsTableSectionProps {
@@ -13,10 +20,46 @@ interface BookingsTableSectionProps {
   hideHeader?: boolean;
 }
 
-function statusLabel(status: FarmerBookingItem["status"]) {
+function statusBadgeStyle(status: FarmerBookingItem["status"]) {
+  switch (status) {
+    case "ARRIVED":
+    case "VERIFIED":
+      return "bg-[#E6F4EA] text-[#0D652D] border border-emerald-200";
+    case "IN_TRANSIT":
+      return "bg-[#F3E8FF] text-[#7C3AED] border border-purple-200";
+    case "ACCEPTED":
+      return "bg-[#E8F0FE] text-[#1967D2] border border-blue-200";
+    case "COMPLETED":
+      return "bg-[#E8F5E9] text-[#059669] border border-emerald-200";
+    case "CANCELLED":
+      return "bg-[#FEE2E2] text-[#DC2626] border border-red-200";
+    case "PENDING":
+    default:
+      return "bg-[#FEF3C7] text-[#D97706] border border-amber-200";
+  }
+}
+
+function statusText(status: FarmerBookingItem["status"]) {
   if (status === "ARRIVED" || status === "VERIFIED") return "Gate Arrived";
   if (status === "IN_TRANSIT") return "In Transit";
   return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+// Avatar color helper based on crop name
+function getCropAvatar(crop: string) {
+  if (crop.toLowerCase().includes("wheat")) {
+    return { bg: "bg-amber-100 text-amber-800", emoji: "🌾" };
+  }
+  if (crop.toLowerCase().includes("rice") || crop.toLowerCase().includes("basmati")) {
+    return { bg: "bg-emerald-100 text-emerald-800", emoji: "🍚" };
+  }
+  if (crop.toLowerCase().includes("soybean")) {
+    return { bg: "bg-yellow-100 text-yellow-800", emoji: "🌱" };
+  }
+  if (crop.toLowerCase().includes("maize") || crop.toLowerCase().includes("corn")) {
+    return { bg: "bg-orange-100 text-orange-800", emoji: "🌽" };
+  }
+  return { bg: "bg-teal-100 text-teal-800", emoji: "📦" };
 }
 
 export const BookingsTableSection = memo(function BookingsTableSection({
@@ -29,15 +72,30 @@ export const BookingsTableSection = memo(function BookingsTableSection({
   onSelectBookingForQR,
   hideHeader = false,
 }: BookingsTableSectionProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(displayedList.map((b) => b.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleToggleRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const allSelected =
+    displayedList.length > 0 && selectedIds.length === displayedList.length;
+
   return (
-    <div
-      className={`w-full bg-white rounded-3xl border border-[#E8EAEC] ${
-        hideHeader ? "p-4 sm:p-5" : "p-6 sm:p-7 space-y-5"
-      } shadow-sm text-left`}
-    >
+    <div className="w-full bg-white rounded-3xl border border-[#E8EAEC] shadow-sm text-left overflow-hidden">
       {/* Header & Tabs */}
       {!hideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F1F3F5] pb-4">
+        <div className="p-6 sm:p-7 pb-4 border-b border-[#F1F3F5] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-[#0B2D1B] flex items-center gap-2">
               <span>
@@ -56,7 +114,7 @@ export const BookingsTableSection = memo(function BookingsTableSection({
             </p>
           </div>
 
-          {/* Tab Pill Switcher */}
+          {/* Tab Switcher */}
           <div className="flex p-1 bg-[#F4F4F2] border border-[#E8EAEC] rounded-xl self-start sm:self-auto">
             <button
               type="button"
@@ -84,7 +142,7 @@ export const BookingsTableSection = memo(function BookingsTableSection({
         </div>
       )}
 
-      {/* Bookings List */}
+      {/* Table Content */}
       {displayedList.length === 0 ? (
         <div className="py-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-[#F4F4F2] text-[#8A92A0] flex items-center justify-center mx-auto">
@@ -102,85 +160,198 @@ export const BookingsTableSection = memo(function BookingsTableSection({
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {displayedList.map((booking) => (
-            <div
-              key={booking.id}
-              className="flex flex-col gap-3.5 rounded-2xl border border-[#E8EAEC] bg-[#FCFCFA] p-4 transition-all hover:border-[#B6E7C5] hover:bg-white hover:shadow-xs sm:p-5 lg:flex-row lg:items-center lg:justify-between"
-            >
-              {/* Left: Token, Crop, Status, and Mandi details */}
-              <div className="space-y-1.5 min-w-0 flex-1">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="font-mono text-xs font-bold px-2.5 py-1 bg-white border border-[#DCE0E5] rounded-lg text-[#0B2D1B] shadow-xs tracking-tight">
-                    {booking.tokenId}
-                  </span>
-                  <strong className="text-sm font-bold text-[#0B2D1B]">{booking.crop}</strong>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                      booking.status === "ARRIVED" || booking.status === "VERIFIED"
-                        ? "bg-teal-50 text-teal-700 border-teal-200"
-                        : booking.status === "IN_TRANSIT"
-                        ? "bg-purple-50 text-purple-700 border-purple-200"
-                        : booking.status === "COMPLETED"
-                        ? "bg-[#E8F5E9] text-[#059669] border-emerald-200"
-                        : booking.status === "ACCEPTED"
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] border-collapse text-left text-xs">
+            {/* Table Header Row */}
+            <thead>
+              <tr className="border-b border-[#E8EAEC] bg-[#FCFCFA] text-[#6C727F]">
+                <th className="w-12 py-3.5 pl-5 pr-2">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 rounded border-[#DCE0E5] text-[#0B2D1B] focus:ring-0 cursor-pointer accent-[#0B2D1B]"
+                  />
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Order Number</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Customer Name</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Order Date</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Status</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Total Amount</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                    <span>Payment Status</span>
+                    <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                  </div>
+                </th>
+                <th className="py-3.5 pl-4 pr-6 font-semibold text-right whitespace-nowrap">
+                  Action
+                </th>
+              </tr>
+            </thead>
+
+            {/* Table Body Rows */}
+            <tbody className="divide-y divide-[#F1F3F5] bg-white">
+              {displayedList.map((booking) => {
+                const isSelected = selectedIds.includes(booking.id);
+                const avatar = getCropAvatar(booking.crop);
+                const paymentStatus =
+                  booking.status === "COMPLETED"
+                    ? "Paid"
+                    : booking.status === "ARRIVED"
+                    ? "In Process"
+                    : "Unpaid";
+
+                return (
+                  <tr
+                    key={booking.id}
+                    className={`transition-colors hover:bg-[#F9FAFB] ${
+                      isSelected ? "bg-[#F4F9F5]" : ""
                     }`}
                   >
-                    {statusLabel(booking.status)}
-                  </span>
-                </div>
+                    {/* Checkbox */}
+                    <td className="py-4 pl-5 pr-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleRow(booking.id)}
+                        className="h-4 w-4 rounded border-[#DCE0E5] text-[#0B2D1B] focus:ring-0 cursor-pointer accent-[#0B2D1B]"
+                      />
+                    </td>
 
-                <div className="flex items-center gap-2 text-xs text-[#5A6C5F] flex-wrap">
-                  <span>{booking.mandiName}</span>
-                  <span className="text-[#DCE0E5]">•</span>
-                  <span className="font-semibold text-[#0B2D1B]">
-                    {booking.quantityKg.toLocaleString("en-IN")} KG ({booking.quantityQuintals} Qtl)
-                  </span>
-                  <span className="text-[#DCE0E5]">•</span>
-                  <span>
-                    Vehicle: <strong className="font-mono text-[#0B2D1B]">{booking.truckNumber}</strong>
-                  </span>
-                </div>
-              </div>
+                    {/* Order / Token Number */}
+                    <td className="px-4 py-4 font-semibold text-[#111315] whitespace-nowrap">
+                      #{booking.tokenId.replace("TKN-", "ORD")}
+                    </td>
 
-              {/* Middle: Slot Schedule & Bay */}
-              <div className="flex items-center gap-4 text-xs text-[#5A6C5F] shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-[#0B2D1B]">
-                    <Clock size={13} className="text-[#059669]" />
-                    <span>{booking.slotDate}</span>
-                  </div>
-                  <div className="text-[11px] text-[#5A6C5F]">{booking.slotTime}</div>
-                </div>
+                    {/* Customer / Crop with Avatar */}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${avatar.bg}`}
+                        >
+                          <span>{avatar.emoji}</span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#111315]">
+                            {booking.crop}
+                          </div>
+                          <div className="text-[11px] text-[#8A92A0]">
+                            {booking.mandiName}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
 
-                <div className="border-l border-[#E8EAEC] pl-4 space-y-0.5">
-                  <div className="text-[11px] text-[#8A92A0]">Assigned Hopper</div>
-                  <div className="font-bold text-[#059669]">{booking.bayAssigned}</div>
-                </div>
-              </div>
+                    {/* Order Date */}
+                    <td className="px-4 py-4 text-[#5A6C5F] whitespace-nowrap">
+                      <div>{booking.slotDate.replace("Today, ", "").replace("Tomorrow, ", "")}</div>
+                      <div className="text-[11px] text-[#8A92A0]">{booking.slotTime}</div>
+                    </td>
 
-              {/* Right: Price & Digital Pass */}
-              <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
-                <div className="text-left lg:text-right">
-                  <div className="text-xs font-bold text-[#0B2D1B]">
-                    ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
-                  </div>
-                  <div className="text-[10px] text-[#5A6C5F]">@ ₹{booking.ratePerQtl}/Qtl</div>
-                </div>
+                    {/* Status Pill Badge */}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusBadgeStyle(
+                          booking.status
+                        )}`}
+                      >
+                        {statusText(booking.status)}
+                      </span>
+                    </td>
 
-                <button
-                  type="button"
-                  onClick={() => onSelectBookingForQR(booking)}
-                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#F4F4F2] border border-[#E2E5E9] text-xs font-bold text-[#0B2D1B] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                >
-                  <QrCode size={14} className="text-[#059669]" />
-                  <span>Digital Pass</span>
-                </button>
-              </div>
-            </div>
-          ))}
+                    {/* Total Amount */}
+                    <td className="px-4 py-4 font-semibold text-[#111315] whitespace-nowrap">
+                      ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
+                    </td>
+
+                    {/* Payment Status */}
+                    <td className="px-4 py-4 font-medium text-[#5A6C5F] whitespace-nowrap">
+                      <span
+                        className={
+                          paymentStatus === "Paid"
+                            ? "text-[#059669] font-semibold"
+                            : paymentStatus === "In Process"
+                            ? "text-[#2563EB] font-semibold"
+                            : "text-[#5A6C5F]"
+                        }
+                      >
+                        {paymentStatus}
+                      </span>
+                    </td>
+
+                    {/* Action Icons */}
+                    <td className="py-4 pl-4 pr-6 whitespace-nowrap text-right">
+                      <div className="inline-flex items-center justify-end gap-2.5 text-[#6C727F]">
+                        {/* Digital Pass (QR modal) */}
+                        <button
+                          type="button"
+                          onClick={() => onSelectBookingForQR(booking)}
+                          title="Digital Pass (QR Code)"
+                          className="p-1 hover:text-[#059669] transition-colors cursor-pointer"
+                        >
+                          <QrCode size={15} />
+                        </button>
+
+                        {/* Edit icon */}
+                        <button
+                          type="button"
+                          onClick={onOpenCreateModal}
+                          title="Edit Booking"
+                          className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                        >
+                          <Pencil size={15} />
+                        </button>
+
+                        {/* Trash icon */}
+                        <button
+                          type="button"
+                          title="Cancel Booking"
+                          className="p-1 hover:text-red-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+
+                        {/* More menu icon */}
+                        <button
+                          type="button"
+                          title="More options"
+                          className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                        >
+                          <MoreHorizontal size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

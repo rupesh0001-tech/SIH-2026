@@ -7,12 +7,15 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  MoreVertical,
+  MoreHorizontal,
   MapPin,
   Truck,
   Headphones,
   CheckCircle2,
   Timer,
+  ArrowUpDown,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import type { FarmerBookingItem } from "../../interfaces";
 
@@ -25,7 +28,7 @@ interface BookingsPageProps {
   onSelectBookingForQR: (booking: FarmerBookingItem) => void;
 }
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 6;
 
 const STATUS_OPTIONS = [
   "All Statuses",
@@ -45,19 +48,22 @@ function statusLabel(status: FarmerBookingItem["status"]): string {
 }
 
 function statusBadgeClass(status: FarmerBookingItem["status"]): string {
-  if (status === "ARRIVED" || status === "VERIFIED")
-    return "bg-teal-50 text-teal-700 border-teal-200";
-  if (status === "IN_TRANSIT")
-    return "bg-purple-50 text-purple-700 border-purple-200";
-  if (status === "ACCEPTED")
-    return "bg-blue-50 text-blue-700 border-blue-200";
-  if (status === "PENDING")
-    return "bg-amber-50 text-amber-700 border-amber-200";
-  if (status === "COMPLETED")
-    return "bg-[#E8F5E9] text-[#059669] border-emerald-200";
-  if (status === "CANCELLED")
-    return "bg-red-50 text-red-700 border-red-200";
-  return "bg-gray-50 text-gray-700 border-gray-200";
+  switch (status) {
+    case "ARRIVED":
+    case "VERIFIED":
+      return "bg-[#E6F4EA] text-[#0D652D] border border-emerald-200";
+    case "IN_TRANSIT":
+      return "bg-[#F3E8FF] text-[#7C3AED] border border-purple-200";
+    case "ACCEPTED":
+      return "bg-[#E8F0FE] text-[#1967D2] border border-blue-200";
+    case "COMPLETED":
+      return "bg-[#E8F5E9] text-[#059669] border border-emerald-200";
+    case "CANCELLED":
+      return "bg-[#FEE2E2] text-[#DC2626] border border-red-200";
+    case "PENDING":
+    default:
+      return "bg-[#FEF3C7] text-[#D97706] border border-amber-200";
+  }
 }
 
 function matchesStatusFilter(
@@ -69,16 +75,28 @@ function matchesStatusFilter(
   return label === filter.toLowerCase();
 }
 
-function matchesDateFilter(
-  slotDate: string,
-  filter: string
-): boolean {
+function matchesDateFilter(slotDate: string, filter: string): boolean {
   if (filter === "All Dates") return true;
   const lower = slotDate.toLowerCase();
   if (filter === "Today") return lower.includes("today");
   if (filter === "Tomorrow") return lower.includes("tomorrow");
-  // "This Week" matches everything for simplicity since all mock data is this week
   return true;
+}
+
+function getCropAvatar(crop: string) {
+  if (crop.toLowerCase().includes("wheat")) {
+    return { bg: "bg-amber-100 text-amber-800", emoji: "🌾" };
+  }
+  if (crop.toLowerCase().includes("rice") || crop.toLowerCase().includes("basmati")) {
+    return { bg: "bg-emerald-100 text-emerald-800", emoji: "🍚" };
+  }
+  if (crop.toLowerCase().includes("soybean")) {
+    return { bg: "bg-yellow-100 text-yellow-800", emoji: "🌱" };
+  }
+  if (crop.toLowerCase().includes("maize") || crop.toLowerCase().includes("corn")) {
+    return { bg: "bg-orange-100 text-orange-800", emoji: "🌽" };
+  }
+  return { bg: "bg-teal-100 text-teal-800", emoji: "📦" };
 }
 
 export const BookingsPage = memo(function BookingsPage({
@@ -95,6 +113,7 @@ export const BookingsPage = memo(function BookingsPage({
   const [cropFilter, setCropFilter] = useState("All Crops");
   const [dateFilter, setDateFilter] = useState("All Dates");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const allBookings = useMemo(
     () => [...currentBookings, ...previousBookings],
@@ -149,16 +168,12 @@ export const BookingsPage = memo(function BookingsPage({
     return result;
   }, [sourceList, searchQuery, statusFilter, mandiFilter, cropFilter, dateFilter]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredList.length / ITEMS_PER_PAGE));
-  const paginatedList = useMemo(
-    () =>
-      filteredList.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-      ),
-    [filteredList, currentPage]
-  );
+  const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE) || 1;
+
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredList.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredList, currentPage]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -170,70 +185,119 @@ export const BookingsPage = memo(function BookingsPage({
   }, []);
 
   const hasActiveFilters =
-    searchQuery.trim() ||
+    searchQuery.trim() !== "" ||
     statusFilter !== "All Statuses" ||
     mandiFilter !== "All Mandis" ||
     cropFilter !== "All Crops" ||
     dateFilter !== "All Dates";
 
-  // Reset page on filter change
-  const updateFilter = <T,>(setter: React.Dispatch<React.SetStateAction<T>>) => (val: T) => {
-    setter(val);
-    setCurrentPage(1);
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(paginatedList.map((b) => b.id));
+    } else {
+      setSelectedIds([]);
+    }
   };
 
+  const handleToggleRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const allSelected =
+    paginatedList.length > 0 && selectedIds.length === paginatedList.length;
+
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#0B2D1B]">Bookings</h1>
-        <p className="mt-1 text-sm text-[#5A6C5F]">
-          Manage active unloading slots, previous deliveries, and digital passes.
-        </p>
+    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 text-left">
+      {/* Top Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#0B2D1B] sm:text-3xl">
+            Unload Order Bookings
+          </h1>
+          <p className="mt-1 text-xs text-[#5A6C5F] sm:text-sm">
+            Track and manage gate arrivals, assigned hoppers, and settlement records.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onCreateBooking}
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0B2D1B] px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-black transition-colors cursor-pointer"
+        >
+          <span className="rounded-full bg-[#C8F52F] px-1.5 text-base leading-4 text-[#0B2D1B]">
+            +
+          </span>
+          Create New Booking
+        </button>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="rounded-2xl border border-[#E8EAEC] bg-white p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          {/* Search */}
-          <div className="relative flex-1 min-w-0">
+      <div className="rounded-3xl border border-[#E8EAEC] bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-3">
+          {/* Search Input */}
+          <div className="relative w-full">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A92A0]"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A92A0]"
             />
             <input
               type="text"
-              placeholder="Search by booking ID, mandi, crop or vehicle..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full rounded-xl border border-[#E2E5E9] bg-[#F8F9FA] py-2.5 pl-10 pr-3 text-xs text-[#0B2D1B] placeholder-[#8A92A0] focus:border-[#059669] focus:outline-none"
+              placeholder="Search by order number, crop, mandi name, or vehicle number..."
+              className="w-full rounded-2xl border border-[#E2E5E9] bg-[#F8F9FA] py-2.5 pl-10 pr-4 text-xs text-[#0B2D1B] placeholder-[#8A92A0] focus:border-[#059669] focus:bg-white focus:outline-none transition-colors"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8A92A0] hover:text-[#0B2D1B]"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2">
             <FilterDropdown
               value={statusFilter}
-              onChange={updateFilter(setStatusFilter)}
+              onChange={(v) => {
+                setStatusFilter(v);
+                setCurrentPage(1);
+              }}
               options={STATUS_OPTIONS}
             />
+
             <FilterDropdown
               value={mandiFilter}
-              onChange={updateFilter(setMandiFilter)}
+              onChange={(v) => {
+                setMandiFilter(v);
+                setCurrentPage(1);
+              }}
               options={uniqueMandis}
             />
+
             <FilterDropdown
               value={cropFilter}
-              onChange={updateFilter(setCropFilter)}
+              onChange={(v) => {
+                setCropFilter(v);
+                setCurrentPage(1);
+              }}
               options={uniqueCrops}
             />
-            <FilterDropdownWithIcon
-              icon={<Calendar size={13} className="text-[#8A92A0]" />}
+
+            <FilterDropdown
               value={dateFilter}
-              onChange={updateFilter(setDateFilter)}
+              onChange={(v) => {
+                setDateFilter(v);
+                setCurrentPage(1);
+              }}
               options={DATE_OPTIONS}
             />
 
@@ -264,7 +328,7 @@ export const BookingsPage = memo(function BookingsPage({
             <strong className="text-[#0B2D1B]">
               {currentBookings.length + previousBookings.length}
             </strong>{" "}
-            bookings
+            orders
           </span>
         </div>
 
@@ -303,10 +367,10 @@ export const BookingsPage = memo(function BookingsPage({
         </div>
       </div>
 
-      {/* Booking Rows */}
-      <div className="space-y-3">
+      {/* Data Table */}
+      <div className="w-full bg-white rounded-3xl border border-[#E8EAEC] shadow-sm text-left overflow-hidden">
         {paginatedList.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#DCE0E5] bg-white py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <Calendar size={32} className="text-[#B6E7C5]" />
             <p className="mt-3 text-sm font-semibold text-[#5A6C5F]">
               No bookings found
@@ -320,20 +384,210 @@ export const BookingsPage = memo(function BookingsPage({
               <button
                 type="button"
                 onClick={onCreateBooking}
-                className="mt-4 rounded-full bg-[#0B2D1B] px-5 py-2.5 text-xs font-bold text-white cursor-pointer"
+                className="mt-4 rounded-full bg-[#0B2D1B] px-5 py-2.5 text-xs font-bold text-white cursor-pointer hover:bg-black transition-colors"
               >
                 Create a Slot Booking Now
               </button>
             )}
           </div>
         ) : (
-          paginatedList.map((booking) => (
-            <BookingRow
-              key={booking.id}
-              booking={booking}
-              onSelectBookingForQR={onSelectBookingForQR}
-            />
-          ))
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] border-collapse text-left text-xs">
+              {/* Table Header Row */}
+              <thead>
+                <tr className="border-b border-[#E8EAEC] bg-[#FCFCFA] text-[#6C727F]">
+                  <th className="w-12 py-3.5 pl-5 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-[#DCE0E5] text-[#0B2D1B] focus:ring-0 cursor-pointer accent-[#0B2D1B]"
+                    />
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Order Number</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Customer Name</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Order Date</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Status</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Total Amount</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1 cursor-pointer select-none">
+                      <span>Payment Status</span>
+                      <ArrowUpDown size={12} className="text-[#9EA5B1]" />
+                    </div>
+                  </th>
+                  <th className="py-3.5 pl-4 pr-6 font-semibold text-right whitespace-nowrap">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              {/* Table Body Rows */}
+              <tbody className="divide-y divide-[#F1F3F5] bg-white">
+                {paginatedList.map((booking) => {
+                  const isSelected = selectedIds.includes(booking.id);
+                  const avatar = getCropAvatar(booking.crop);
+                  const paymentStatus =
+                    booking.status === "COMPLETED"
+                      ? "Paid"
+                      : booking.status === "ARRIVED"
+                      ? "In Process"
+                      : "Unpaid";
+
+                  return (
+                    <tr
+                      key={booking.id}
+                      className={`transition-colors hover:bg-[#F9FAFB] ${
+                        isSelected ? "bg-[#F4F9F5]" : ""
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-4 pl-5 pr-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleRow(booking.id)}
+                          className="h-4 w-4 rounded border-[#DCE0E5] text-[#0B2D1B] focus:ring-0 cursor-pointer accent-[#0B2D1B]"
+                        />
+                      </td>
+
+                      {/* Order Number */}
+                      <td className="px-4 py-4 font-semibold text-[#111315] whitespace-nowrap">
+                        #{booking.tokenId.replace("TKN-", "ORD")}
+                      </td>
+
+                      {/* Customer / Crop with Avatar */}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${avatar.bg}`}
+                          >
+                            <span>{avatar.emoji}</span>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#111315]">
+                              {booking.crop}
+                            </div>
+                            <div className="text-[11px] text-[#8A92A0]">
+                              {booking.mandiName}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Order Date */}
+                      <td className="px-4 py-4 text-[#5A6C5F] whitespace-nowrap">
+                        <div>
+                          {booking.slotDate.replace("Today, ", "").replace("Tomorrow, ", "")}
+                        </div>
+                        <div className="text-[11px] text-[#8A92A0]">
+                          {booking.slotTime}
+                        </div>
+                      </td>
+
+                      {/* Status Pill Badge */}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusBadgeClass(
+                            booking.status
+                          )}`}
+                        >
+                          {statusLabel(booking.status)}
+                        </span>
+                      </td>
+
+                      {/* Total Amount */}
+                      <td className="px-4 py-4 font-semibold text-[#111315] whitespace-nowrap">
+                        ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
+                      </td>
+
+                      {/* Payment Status */}
+                      <td className="px-4 py-4 font-medium text-[#5A6C5F] whitespace-nowrap">
+                        <span
+                          className={
+                            paymentStatus === "Paid"
+                              ? "text-[#059669] font-semibold"
+                              : paymentStatus === "In Process"
+                              ? "text-[#2563EB] font-semibold"
+                              : "text-[#5A6C5F]"
+                          }
+                        >
+                          {paymentStatus}
+                        </span>
+                      </td>
+
+                      {/* Action Icons */}
+                      <td className="py-4 pl-4 pr-6 whitespace-nowrap text-right">
+                        <div className="inline-flex items-center justify-end gap-2.5 text-[#6C727F]">
+                          {/* Digital Pass (QR modal) */}
+                          <button
+                            type="button"
+                            onClick={() => onSelectBookingForQR(booking)}
+                            title="Digital Pass (QR Code)"
+                            className="p-1 hover:text-[#059669] transition-colors cursor-pointer"
+                          >
+                            <QrCode size={15} />
+                          </button>
+
+                          {/* Edit icon */}
+                          <button
+                            type="button"
+                            onClick={onCreateBooking}
+                            title="Edit Booking"
+                            className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                          >
+                            <Pencil size={15} />
+                          </button>
+
+                          {/* Trash icon */}
+                          <button
+                            type="button"
+                            title="Cancel Booking"
+                            className="p-1 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+
+                          {/* More menu icon */}
+                          <button
+                            type="button"
+                            title="More options"
+                            className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                          >
+                            <MoreHorizontal size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -399,97 +653,6 @@ export const BookingsPage = memo(function BookingsPage({
   );
 });
 
-/* ─── Individual Booking Row ──────────────────────────────────── */
-const BookingRow = memo(function BookingRow({
-  booking,
-  onSelectBookingForQR,
-}: {
-  booking: FarmerBookingItem;
-  onSelectBookingForQR: (booking: FarmerBookingItem) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3.5 rounded-2xl border border-[#E8EAEC] bg-[#FCFCFA] p-4 transition-all hover:border-[#B6E7C5] hover:bg-white hover:shadow-xs sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-      {/* Left: Token, Crop, Status, and Mandi details */}
-      <div className="space-y-1.5 min-w-0 flex-1">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="font-mono text-xs font-bold px-2.5 py-1 bg-white border border-[#DCE0E5] rounded-lg text-[#0B2D1B] shadow-xs tracking-tight">
-            {booking.tokenId}
-          </span>
-          <strong className="text-sm font-bold text-[#0B2D1B]">{booking.crop}</strong>
-          <span
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusBadgeClass(
-              booking.status
-            )}`}
-          >
-            {statusLabel(booking.status)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-[#5A6C5F] flex-wrap">
-          <span className="inline-flex items-center gap-1">
-            <MapPin size={11} className="text-[#8A92A0]" />
-            {booking.mandiName}
-          </span>
-          <span className="text-[#DCE0E5]">•</span>
-          <span className="inline-flex items-center gap-1 font-semibold text-[#0B2D1B]">
-            <Truck size={11} className="text-[#8A92A0]" />
-            {booking.quantityKg.toLocaleString("en-IN")} KG ({booking.quantityQuintals} Qtl)
-          </span>
-          <span className="text-[#DCE0E5]">•</span>
-          <span>
-            Vehicle: <strong className="font-mono text-[#0B2D1B]">{booking.truckNumber}</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* Middle: Schedule + Bay */}
-      <div className="flex items-center gap-4 text-xs text-[#5A6C5F] shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 font-semibold text-[#0B2D1B]">
-            <Calendar size={13} className="text-[#059669]" />
-            <span>{booking.slotDate}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-[#5A6C5F]">
-            <Clock size={11} className="text-[#8A92A0]" />
-            <span>{booking.slotTime}</span>
-          </div>
-        </div>
-
-        <div className="space-y-0.5 border-l border-[#E8EAEC] pl-4">
-          <div className="text-[10px] font-medium text-[#8A92A0]">Assigned Hopper</div>
-          <div className="text-xs font-bold text-[#059669]">{booking.bayAssigned}</div>
-        </div>
-      </div>
-
-      {/* Right: Amount + Actions */}
-      <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
-        <div className="text-left lg:text-right">
-          <div className="text-sm font-bold text-[#0B2D1B]">
-            ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
-          </div>
-          <div className="text-[10px] text-[#5A6C5F]">@ ₹{booking.ratePerQtl}/Qtl</div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onSelectBookingForQR(booking)}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E5E9] bg-white px-3.5 py-2 text-xs font-bold text-[#0B2D1B] shadow-xs transition-colors hover:bg-[#F4F4F2] cursor-pointer"
-        >
-          <QrCode size={14} className="text-[#059669]" />
-          <span>Digital Pass</span>
-        </button>
-
-        <button
-          type="button"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E5E9] bg-white text-[#8A92A0] transition-colors hover:bg-[#F4F4F2] cursor-pointer"
-        >
-          <MoreVertical size={14} />
-        </button>
-      </div>
-    </div>
-  );
-});
-
 /* ─── Filter Dropdown Helpers ─────────────────────────────────── */
 function FilterDropdown({
   value,
@@ -512,34 +675,5 @@ function FilterDropdown({
         </option>
       ))}
     </select>
-  );
-}
-
-function FilterDropdownWithIcon({
-  icon,
-  value,
-  onChange,
-  options,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  return (
-    <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E5E9] bg-[#F8F9FA] px-2.5 py-1.5">
-      {icon}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-[11px] font-semibold text-[#0B2D1B] focus:outline-none cursor-pointer"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
