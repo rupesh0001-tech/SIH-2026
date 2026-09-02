@@ -45,3 +45,58 @@ export interface UpdateFarmerProfilePayload {
   irrigationType?: string | null;
   farmLocation?: string | null;
 }
+
+export type FarmerRoute = "/farmer/dashboard" | "/bookings" | "/find-mandi" | "/settings";
+
+export type FarmerBookingStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "IN_TRANSIT"
+  | "ARRIVED"
+  | "VERIFIED"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export interface FarmerBookingItem {
+  id: string;
+  tokenId: string;
+  mandiName: string;
+  mandiCode: string;
+  crop: string;
+  quantityKg: number;
+  quantityQuintals: number;
+  slotDate: string;
+  slotTime: string;
+  bayAssigned: string;
+  truckNumber: string;
+  status: FarmerBookingStatus;
+  ratePerQtl: number;
+  totalEstimatedPayout: number;
+}
+
+export interface SuggestedMandi {
+  id: string;
+  name: string;
+  district: string;
+  state: string;
+  distanceKm: number;
+  operatingHours: string;
+  bestCrop: string;
+  currentRateQtl: number;
+  mspRateQtl: number;
+  availableSlotsToday: number;
+  recommendedSlotTime: string;
+  badge?: string;
+  lat: number;
+  lng: number;
+  imageUrl: string;
+}
+
+export interface YardMessage {
+  id: string;
+  title: string;
+  time: string;
+  type: "GATE" | "PAYMENT" | "PRICE_ALERT" | "INFO";
+  content: string;
+  isRead?: boolean;
+}

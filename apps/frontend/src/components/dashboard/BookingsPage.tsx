@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Timer,
 } from "lucide-react";
-import type { FarmerBookingItem } from "./FarmerDashboard";
+import type { FarmerBookingItem } from "../../interfaces";
 
 interface BookingsPageProps {
   currentBookings: FarmerBookingItem[];
@@ -408,61 +408,42 @@ const BookingRow = memo(function BookingRow({
   onSelectBookingForQR: (booking: FarmerBookingItem) => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-[#E8EAEC] bg-white p-4 shadow-sm transition-colors hover:border-emerald-200 hover:shadow-md sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-      {/* Left: Slot + Crop Details */}
-      <div className="flex items-start gap-4 sm:items-center">
-        {/* Slot Number Box */}
-        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#E8EAEC] bg-[#F8F9FA]">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-[#8A92A0]">
-            SLOT
+    <div className="flex flex-col gap-3.5 rounded-2xl border border-[#E8EAEC] bg-[#FCFCFA] p-4 transition-all hover:border-[#B6E7C5] hover:bg-white hover:shadow-xs sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      {/* Left: Token, Crop, Status, and Mandi details */}
+      <div className="space-y-1.5 min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-mono text-xs font-bold px-2.5 py-1 bg-white border border-[#DCE0E5] rounded-lg text-[#0B2D1B] shadow-xs tracking-tight">
+            {booking.tokenId}
           </span>
-          <span className="font-mono text-base font-bold leading-tight text-[#0B2D1B]">
-            {booking.tokenId.slice(-4)}
+          <strong className="text-sm font-bold text-[#0B2D1B]">{booking.crop}</strong>
+          <span
+            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusBadgeClass(
+              booking.status
+            )}`}
+          >
+            {statusLabel(booking.status)}
           </span>
         </div>
 
-        {/* Crop & Details */}
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-[#E2E5E9] bg-[#F4F4F2] px-2 py-0.5 font-mono text-[11px] font-bold text-[#0B2D1B]">
-              {booking.tokenId}
-            </span>
-            <strong className="text-sm font-bold text-[#0B2D1B]">
-              {booking.crop}
-            </strong>
-            <span
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusBadgeClass(
-                booking.status
-              )}`}
-            >
-              {statusLabel(booking.status)}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#5A6C5F]">
-            <span className="inline-flex items-center gap-1">
-              <MapPin size={11} className="text-[#8A92A0]" />
-              {booking.mandiName}
-            </span>
-            <span className="text-[#DCE0E5]">•</span>
-            <span className="inline-flex items-center gap-1">
-              <Truck size={11} className="text-[#8A92A0]" />
-              {booking.quantityKg.toLocaleString("en-IN")} KG (
-              {booking.quantityQuintals} Qtl)
-            </span>
-            <span className="text-[#DCE0E5]">•</span>
-            <span>
-              Vehicle:{" "}
-              <strong className="font-mono text-[#0B2D1B]">
-                {booking.truckNumber}
-              </strong>
-            </span>
-          </div>
+        <div className="flex items-center gap-2 text-xs text-[#5A6C5F] flex-wrap">
+          <span className="inline-flex items-center gap-1">
+            <MapPin size={11} className="text-[#8A92A0]" />
+            {booking.mandiName}
+          </span>
+          <span className="text-[#DCE0E5]">•</span>
+          <span className="inline-flex items-center gap-1 font-semibold text-[#0B2D1B]">
+            <Truck size={11} className="text-[#8A92A0]" />
+            {booking.quantityKg.toLocaleString("en-IN")} KG ({booking.quantityQuintals} Qtl)
+          </span>
+          <span className="text-[#DCE0E5]">•</span>
+          <span>
+            Vehicle: <strong className="font-mono text-[#0B2D1B]">{booking.truckNumber}</strong>
+          </span>
         </div>
       </div>
 
       {/* Middle: Schedule + Bay */}
-      <div className="flex items-center gap-5 pl-[4.5rem] text-xs text-[#5A6C5F] lg:pl-0">
+      <div className="flex items-center gap-4 text-xs text-[#5A6C5F] shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1.5 font-semibold text-[#0B2D1B]">
             <Calendar size={13} className="text-[#059669]" />
@@ -474,25 +455,19 @@ const BookingRow = memo(function BookingRow({
           </div>
         </div>
 
-        <div className="space-y-0.5 border-l border-[#E8EAEC] pl-5">
-          <div className="text-[10px] font-medium text-[#8A92A0]">
-            Assigned Hopper
-          </div>
-          <div className="text-xs font-bold text-[#059669]">
-            {booking.bayAssigned}
-          </div>
+        <div className="space-y-0.5 border-l border-[#E8EAEC] pl-4">
+          <div className="text-[10px] font-medium text-[#8A92A0]">Assigned Hopper</div>
+          <div className="text-xs font-bold text-[#059669]">{booking.bayAssigned}</div>
         </div>
       </div>
 
       {/* Right: Amount + Actions */}
-      <div className="flex items-center gap-3 pl-[4.5rem] lg:pl-0">
-        <div className="mr-1 text-right">
+      <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
+        <div className="text-left lg:text-right">
           <div className="text-sm font-bold text-[#0B2D1B]">
             ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
           </div>
-          <div className="text-[10px] text-[#5A6C5F]">
-            @ ₹{booking.ratePerQtl}/Qtl
-          </div>
+          <div className="text-[10px] text-[#5A6C5F]">@ ₹{booking.ratePerQtl}/Qtl</div>
         </div>
 
         <button

@@ -464,20 +464,10 @@ export const FarmerDashboard = memo(function FarmerDashboard() {
         <div className="w-full bg-white rounded-3xl border border-[#E8EAEC] p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#C8F52F]/20 via-[#E8F5E9]/30 to-transparent rounded-bl-full pointer-events-none" />
 
-          <div className="space-y-2 relative z-10 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8F5E9] text-[#059669] text-xs font-bold border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
-              <span>APMC Indore & Ujjain Yards Operating Live</span>
-            </div>
-
+          <div className="space-y-1 relative z-10 text-left">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#0B2D1B]">
               Welcome back, {authUser?.name || "Ramesh Patel"}
             </h1>
-
-            <p className="text-xs sm:text-sm text-[#5A6C5F] max-w-xl">
-              Schedule grain arrival slots, access direct weighbridge tokens, and track real-time
-              crop realizations without waiting in gate queues.
-            </p>
           </div>
 
           {/* Action Buttons */}

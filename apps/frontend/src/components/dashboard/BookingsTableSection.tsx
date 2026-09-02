@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { Calendar, Clock, QrCode } from "lucide-react";
-import type { FarmerBookingItem } from "./FarmerDashboard";
+import type { FarmerBookingItem } from "../../interfaces";
 
 interface BookingsTableSectionProps {
   activeTab: "current" | "previous";
@@ -19,14 +19,6 @@ function statusLabel(status: FarmerBookingItem["status"]) {
   return status.charAt(0) + status.slice(1).toLowerCase();
 }
 
-function statusClass(status: FarmerBookingItem["status"]) {
-  if (status === "PENDING") return "bg-amber-50 text-amber-700 border-amber-200";
-  if (status === "ACCEPTED") return "bg-blue-50 text-blue-700 border-blue-200";
-  if (status === "IN_TRANSIT") return "bg-purple-50 text-purple-700 border-purple-200";
-  if (status === "ARRIVED" || status === "VERIFIED") return "bg-teal-50 text-teal-700 border-teal-200";
-  return "bg-[#E8F5E9] text-[#059669] border-emerald-200";
-}
-
 export const BookingsTableSection = memo(function BookingsTableSection({
   activeTab,
   onTabChange,
@@ -38,7 +30,11 @@ export const BookingsTableSection = memo(function BookingsTableSection({
   hideHeader = false,
 }: BookingsTableSectionProps) {
   return (
-    <div className={`w-full bg-white rounded-3xl border border-[#E8EAEC] ${hideHeader ? "p-4 sm:p-5" : "p-6 sm:p-7 space-y-5"} shadow-sm text-left`}>
+    <div
+      className={`w-full bg-white rounded-3xl border border-[#E8EAEC] ${
+        hideHeader ? "p-4 sm:p-5" : "p-6 sm:p-7 space-y-5"
+      } shadow-sm text-left`}
+    >
       {/* Header & Tabs */}
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F1F3F5] pb-4">
@@ -88,78 +84,69 @@ export const BookingsTableSection = memo(function BookingsTableSection({
         </div>
       )}
 
-      {/* Bookings List Table */}
+      {/* Bookings List */}
       {displayedList.length === 0 ? (
         <div className="py-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-[#F4F4F2] text-[#8A92A0] flex items-center justify-center mx-auto">
             <Calendar size={22} />
           </div>
-          <p className="text-sm font-semibold text-[#5A6C5F]">No bookings found in this category.</p>
+          <p className="text-sm font-semibold text-[#5A6C5F]">
+            No bookings found in this category.
+          </p>
           <button
             type="button"
             onClick={onOpenCreateModal}
-            className="px-4 py-2 bg-[#0B2D1B] text-white rounded-full text-xs font-bold cursor-pointer"
+            className="px-4 py-2 bg-[#0B2D1B] text-white rounded-full text-xs font-bold cursor-pointer hover:bg-black transition-colors"
           >
             Create a Slot Booking Now
           </button>
         </div>
       ) : (
-        <div className="divide-y divide-[#F1F3F5] overflow-x-auto">
+        <div className="space-y-3">
           {displayedList.map((booking) => (
             <div
               key={booking.id}
-              className="flex flex-col gap-4 rounded-2xl border border-[#E8EAEC] bg-white p-4 transition-colors hover:bg-[#FCFCFA] md:border-0 md:px-2 md:py-4.5 lg:flex-row lg:items-center lg:justify-between"
+              className="flex flex-col gap-3.5 rounded-2xl border border-[#E8EAEC] bg-[#FCFCFA] p-4 transition-all hover:border-[#B6E7C5] hover:bg-white hover:shadow-xs sm:p-5 lg:flex-row lg:items-center lg:justify-between"
             >
-              {/* Left: Token & Crop Details */}
-              <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-[#F4F4F2] border border-[#E8EAEC] flex flex-col items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-[#8A92A0] uppercase">Slot</span>
-                  <span className="font-mono text-xs font-bold text-[#0B2D1B]">
-                    {booking.tokenId.slice(-4)}
+              {/* Left: Token, Crop, Status, and Mandi details */}
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 bg-white border border-[#DCE0E5] rounded-lg text-[#0B2D1B] shadow-xs tracking-tight">
+                    {booking.tokenId}
+                  </span>
+                  <strong className="text-sm font-bold text-[#0B2D1B]">{booking.crop}</strong>
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                      booking.status === "ARRIVED" || booking.status === "VERIFIED"
+                        ? "bg-teal-50 text-teal-700 border-teal-200"
+                        : booking.status === "IN_TRANSIT"
+                        ? "bg-purple-50 text-purple-700 border-purple-200"
+                        : booking.status === "COMPLETED"
+                        ? "bg-[#E8F5E9] text-[#059669] border-emerald-200"
+                        : booking.status === "ACCEPTED"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {statusLabel(booking.status)}
                   </span>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[#F4F4F2] border border-[#E2E5E9] rounded-md text-[#0B2D1B]">
-                      {booking.tokenId}
-                    </span>
-                    <strong className="text-sm font-bold text-[#0B2D1B]">{booking.crop}</strong>
-
-                    {/* Status Badge */}
-                    <span
-                      className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                        booking.status === "ARRIVED" || booking.status === "VERIFIED"
-                          ? "bg-teal-50 text-teal-700 border-teal-200"
-                          : booking.status === "IN_TRANSIT"
-                          ? "bg-purple-50 text-purple-700 border-purple-200"
-                          : booking.status === "COMPLETED"
-                          ? "bg-[#E8F5E9] text-[#059669] border-emerald-200"
-                          : booking.status === "ACCEPTED"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
-                    >
-                      {statusLabel(booking.status)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-xs text-[#5A6C5F] flex-wrap">
-                    <span>{booking.mandiName}</span>
-                    <span>•</span>
-                    <span className="font-semibold text-[#0B2D1B]">
-                      {booking.quantityKg.toLocaleString("en-IN")} KG ({booking.quantityQuintals} Qtl)
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Vehicle: <strong className="font-mono text-[#0B2D1B]">{booking.truckNumber}</strong>
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-xs text-[#5A6C5F] flex-wrap">
+                  <span>{booking.mandiName}</span>
+                  <span className="text-[#DCE0E5]">•</span>
+                  <span className="font-semibold text-[#0B2D1B]">
+                    {booking.quantityKg.toLocaleString("en-IN")} KG ({booking.quantityQuintals} Qtl)
+                  </span>
+                  <span className="text-[#DCE0E5]">•</span>
+                  <span>
+                    Vehicle: <strong className="font-mono text-[#0B2D1B]">{booking.truckNumber}</strong>
+                  </span>
                 </div>
               </div>
 
               {/* Middle: Slot Schedule & Bay */}
-              <div className="flex items-center gap-4 text-xs text-[#5A6C5F] pl-15 lg:pl-0">
+              <div className="flex items-center gap-4 text-xs text-[#5A6C5F] shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5 font-semibold text-[#0B2D1B]">
                     <Clock size={13} className="text-[#059669]" />
@@ -174,9 +161,9 @@ export const BookingsTableSection = memo(function BookingsTableSection({
                 </div>
               </div>
 
-              {/* Right: Actions */}
-              <div className="flex items-center gap-2.5 pl-15 lg:pl-0 shrink-0">
-                <div className="mr-2 text-right">
+              {/* Right: Price & Digital Pass */}
+              <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 border-t border-[#F1F3F5] pt-3 lg:border-t-0 lg:pt-0">
+                <div className="text-left lg:text-right">
                   <div className="text-xs font-bold text-[#0B2D1B]">
                     ₹{booking.totalEstimatedPayout.toLocaleString("en-IN")}
                   </div>
