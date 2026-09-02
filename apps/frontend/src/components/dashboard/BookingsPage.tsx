@@ -440,7 +440,7 @@ export const BookingsPage = memo(function BookingsPage({
                       <ArrowUpDown size={12} className="text-[#9EA5B1]" />
                     </div>
                   </th>
-                  <th className="py-3.5 pl-4 pr-6 font-semibold text-right whitespace-nowrap">
+                  <th className="py-3.5 px-6 font-semibold text-center whitespace-nowrap w-28">
                     Action
                   </th>
                 </tr>
@@ -477,7 +477,14 @@ export const BookingsPage = memo(function BookingsPage({
 
                       {/* Order Number */}
                       <td className="px-4 py-4 font-semibold text-[#111315] whitespace-nowrap">
-                        #{booking.tokenId.replace("TKN-", "ORD")}
+                        <button
+                          type="button"
+                          onClick={() => onSelectBookingForQR(booking)}
+                          className="font-semibold text-[#111315] hover:text-[#059669] hover:underline cursor-pointer"
+                          title="View Pass & Booking Details"
+                        >
+                          #{booking.tokenId.replace("TKN-", "ORD")}
+                        </button>
                       </td>
 
                       {/* Customer / Crop with Avatar */}
@@ -540,45 +547,36 @@ export const BookingsPage = memo(function BookingsPage({
                         </span>
                       </td>
 
-                      {/* Action Icons */}
-                      <td className="py-4 pl-4 pr-6 whitespace-nowrap text-right">
-                        <div className="inline-flex items-center justify-end gap-2.5 text-[#6C727F]">
-                          {/* Digital Pass (QR modal) */}
-                          <button
-                            type="button"
-                            onClick={() => onSelectBookingForQR(booking)}
-                            title="Digital Pass (QR Code)"
-                            className="p-1 hover:text-[#059669] transition-colors cursor-pointer"
-                          >
-                            <QrCode size={15} />
-                          </button>
-
+                      {/* Action Icons matching reference: [pencil] [trash (red)] [...] */}
+                      <td className="py-4 px-6 whitespace-nowrap text-center">
+                        <div className="inline-flex items-center justify-center gap-3.5">
                           {/* Edit icon */}
                           <button
                             type="button"
                             onClick={onCreateBooking}
                             title="Edit Booking"
-                            className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                            className="text-[#4B5563] hover:text-[#111315] transition-colors cursor-pointer"
                           >
-                            <Pencil size={15} />
+                            <Pencil size={15} strokeWidth={1.8} />
                           </button>
 
-                          {/* Trash icon */}
+                          {/* Trash icon (red) */}
                           <button
                             type="button"
                             title="Cancel Booking"
-                            className="p-1 hover:text-red-600 transition-colors cursor-pointer"
+                            className="text-[#EF4444] hover:text-[#DC2626] transition-colors cursor-pointer"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={15} strokeWidth={1.8} />
                           </button>
 
-                          {/* More menu icon */}
+                          {/* More menu icon / Digital Pass */}
                           <button
                             type="button"
-                            title="More options"
-                            className="p-1 hover:text-[#111315] transition-colors cursor-pointer"
+                            onClick={() => onSelectBookingForQR(booking)}
+                            title="Digital Pass & Details"
+                            className="text-[#4B5563] hover:text-[#111315] transition-colors cursor-pointer"
                           >
-                            <MoreHorizontal size={15} />
+                            <MoreHorizontal size={15} strokeWidth={1.8} />
                           </button>
                         </div>
                       </td>
