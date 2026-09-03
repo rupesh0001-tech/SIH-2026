@@ -12,23 +12,25 @@ import { useRouter } from 'expo-router';
 import { AppButton } from '@/components/ui/AppButton';
 
 const { width } = Dimensions.get('window');
+// Calculate height so the 9:16 portrait image takes full width edge-to-edge
+const HERO_HEIGHT = Math.min(width * 1.35, 520);
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         bounces={false}
         showsVerticalScrollIndicator={false}>
         
-        {/* Top Hero Container with Farmer Mascot (Fully visible without top clipping) */}
+        {/* Full-width Top Hero Container extending height as per design */}
         <View style={styles.heroContainer}>
           <Image
             source={require('@/assets/images/farmer-mascot.jpg')}
             style={styles.mascotImage}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         </View>
 
@@ -82,18 +84,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
   heroContainer: {
     width: '100%',
-    height: Math.min(width * 1.05, 410),
-    backgroundColor: '#FFA234', // Blends seamlessly with the top gradient of the mascot
+    height: HERO_HEIGHT,
+    backgroundColor: '#FB923C',
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 8,
   },
   mascotImage: {
     width: '100%',
@@ -101,8 +100,8 @@ const styles = StyleSheet.create({
   },
   contentSection: {
     paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 24,
+    paddingTop: 22,
+    paddingBottom: 20,
     alignItems: 'center',
     flex: 1,
     justifyContent: 'space-between',
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
     color: '#78716C',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 20,
+    marginBottom: 24,
     paddingHorizontal: 8,
   },
   buttonGroup: {
@@ -154,7 +153,7 @@ const styles = StyleSheet.create({
   footerNote: {
     fontSize: 12,
     color: '#A8A29E',
-    marginTop: 14,
+    marginTop: 16,
     fontWeight: '500',
   },
 });
