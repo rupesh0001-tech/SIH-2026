@@ -14,3 +14,9 @@ export interface AppButtonProps {
   disabled?: boolean;
   style?: any;
 }
+
+export interface BackButtonProps {
+  onPress?: () => void;
+  transparent?: boolean;
+  style?: any;
+}
