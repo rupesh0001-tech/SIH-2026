@@ -1,18 +1,18 @@
 import React, { memo } from "react";
 import { BarChart3, CalendarDays, MapPinned, Settings } from "lucide-react";
 
-type FarmerRoute = "/" | "/bookings" | "/find-mandi" | "/settings";
+import type { FarmerRoute } from "../../interfaces";
 
 type FarmerSidebarProps = {
   activeRoute: FarmerRoute;
   onNavigate: (route: FarmerRoute) => void;
 };
 
-const items = [
-  { route: "/" as FarmerRoute, label: "Dashboard", icon: BarChart3 },
-  { route: "/bookings" as FarmerRoute, label: "Bookings", icon: CalendarDays },
-  { route: "/find-mandi" as FarmerRoute, label: "Find Mandi", icon: MapPinned },
-  { route: "/settings" as FarmerRoute, label: "Settings", icon: Settings },
+const items: { route: FarmerRoute; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  { route: "/farmer/dashboard", label: "Dashboard", icon: BarChart3 },
+  { route: "/bookings", label: "Bookings", icon: CalendarDays },
+  { route: "/find-mandi", label: "Find Mandi", icon: MapPinned },
+  { route: "/settings", label: "Settings", icon: Settings },
 ];
 
 export const FarmerSidebar = memo(function FarmerSidebar({

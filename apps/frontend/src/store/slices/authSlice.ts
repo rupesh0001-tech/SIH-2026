@@ -21,22 +21,66 @@ import {
   apiResetPassword,
 } from "../../services/auth.api";
 
-const initialUser: User | null = (() => {
+function getStoredUser(): User | null {
   try {
     const saved = localStorage.getItem("mandi_current_user");
-    return saved ? JSON.parse(saved) : null;
+    if (saved) return JSON.parse(saved);
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/(?:^|;\s*)mandi_user=([^;]*)/);
+      if (match && match[1]) return JSON.parse(decodeURIComponent(match[1]));
+    }
+    return null;
   } catch {
     return null;
   }
-})();
+}
 
-const initialToken: string | null = (() => {
+function getStoredToken(): string | null {
   try {
-    return localStorage.getItem("mandi_access_token") || null;
+    const saved = localStorage.getItem("mandi_access_token");
+    if (saved) return saved;
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/(?:^|;\s*)mandi_access_token=([^;]*)/);
+      if (match && match[1]) return decodeURIComponent(match[1]);
+    }
+    return null;
   } catch {
     return null;
   }
-})();
+}
+
+function saveAuthSession(user: User, token?: string | null) {
+  try {
+    localStorage.setItem("mandi_current_user", JSON.stringify(user));
+    if (token) {
+      localStorage.setItem("mandi_access_token", token);
+    }
+    if (typeof document !== "undefined") {
+      document.cookie = `mandi_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=604800; SameSite=Lax`;
+      if (token) {
+        document.cookie = `mandi_access_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax`;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to save auth session:", e);
+  }
+}
+
+function clearAuthSession() {
+  try {
+    localStorage.removeItem("mandi_current_user");
+    localStorage.removeItem("mandi_access_token");
+    if (typeof document !== "undefined") {
+      document.cookie = "mandi_user=; path=/; max-age=0; SameSite=Lax";
+      document.cookie = "mandi_access_token=; path=/; max-age=0; SameSite=Lax";
+    }
+  } catch (e) {
+    console.error("Failed to clear auth session:", e);
+  }
+}
+
+const initialUser: User | null = getStoredUser();
+const initialToken: string | null = getStoredToken();
 
 const initialState: AuthState = {
   user: initialUser,
@@ -193,12 +237,7 @@ export const authSlice = createSlice({
       state.successMessage = null;
       state.otpSent = false;
       state.pendingIdentifier = null;
-      try {
-        localStorage.removeItem("mandi_current_user");
-        localStorage.removeItem("mandi_access_token");
-      } catch (e) {
-        console.error(e);
-      }
+      clearAuthSession();
     },
   },
   extraReducers: (builder) => {
@@ -239,12 +278,7 @@ export const authSlice = createSlice({
         state.otpSent = false;
         state.errorCode = null;
         state.successMessage = `Welcome back, ${action.payload.user.name}!`;
-        try {
-          localStorage.setItem("mandi_current_user", JSON.stringify(action.payload.user));
-          localStorage.setItem("mandi_access_token", action.payload.accessToken);
-        } catch (e) {
-          console.error(e);
-        }
+        saveAuthSession(action.payload.user, action.payload.accessToken);
       })
       .addCase(loginUserThunk.rejected, (state, action) => {
         state.isLoading = false;
@@ -291,14 +325,7 @@ export const authSlice = createSlice({
           state.user = action.payload.user;
           state.accessToken = action.payload.accessToken || null;
           state.isAuthenticated = true;
-          try {
-            localStorage.setItem("mandi_current_user", JSON.stringify(action.payload.user));
-            if (action.payload.accessToken) {
-              localStorage.setItem("mandi_access_token", action.payload.accessToken);
-            }
-          } catch (e) {
-            console.error(e);
-          }
+          saveAuthSession(action.payload.user, action.payload.accessToken);
         }
         state.pendingIdentifier = null;
         state.otpSent = false;
