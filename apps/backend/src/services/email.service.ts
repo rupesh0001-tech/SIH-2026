@@ -1,14 +1,14 @@
 import { Resend } from "resend";
 import { env } from "../config/env.js";
 
-// Initialize Resend client if API key is provided
+// Initialize Resend client if API key is configured
 const resendClient =
   env.RESEND_API_KEY && env.RESEND_API_KEY !== "re_123456789"
     ? new Resend(env.RESEND_API_KEY)
     : null;
 
 /**
- * Internal helper function to dispatch emails via Resend or log in dev/test environment.
+ * Internal helper function to dispatch emails via Resend and log in terminal for development.
  */
 async function dispatchEmail(
   to: string,
@@ -16,6 +16,16 @@ async function dispatchEmail(
   html: string,
   textFallback: string
 ): Promise<boolean> {
+  // Always log outgoing email & OTP to terminal in development/testing mode
+  if (env.NODE_ENV !== "test") {
+    console.log(`\n==================================================`);
+    console.log(`📧 [EMAIL DISPATCH - ${env.NODE_ENV.toUpperCase()}]`);
+    console.log(`   To: ${to}`);
+    console.log(`   Subject: ${subject}`);
+    console.log(`   Body: ${textFallback}`);
+    console.log(`==================================================\n`);
+  }
+
   if (resendClient) {
     try {
       const { error } = await resendClient.emails.send({
@@ -27,23 +37,17 @@ async function dispatchEmail(
       });
 
       if (error) {
-        console.error("❌ Resend email dispatch error:", error);
+        console.warn(`⚠️ Resend email dispatch notice (${error.name || "Error"}): ${error.message}`);
         return false;
       }
       return true;
-    } catch (err) {
-      console.error("❌ Failed sending email via Resend:", err);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`⚠️ Failed sending email via Resend: ${errMsg}`);
       return false;
     }
   }
 
-  // In development/test mode, log to console
-  if (env.NODE_ENV !== "test") {
-    console.log(`\n📧 [EMAIL SERVICE - Development / Mock Mode]`);
-    console.log(`   To: ${to}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   Content: ${textFallback}\n`);
-  }
   return true;
 }
 
@@ -69,7 +73,7 @@ export async function sendVerificationOtpEmail(
     </div>
   `;
 
-  return dispatchEmail(to, subject, html, `Your verification code is: ${otp}`);
+  return dispatchEmail(to, subject, html, `Your 6-digit verification code is: [ ${otp} ] (Valid for 10 minutes)`);
 }
 
 /**
@@ -103,5 +107,10 @@ export async function sendPasswordResetEmail(
     </div>
   `;
 
-  return dispatchEmail(to, subject, html, `Reset your password at: ${resetUrl}`);
+  return dispatchEmail(
+    to,
+    subject,
+    html,
+    `Reset your password at: ${resetUrl}${otp ? ` | OTP: [ ${otp} ]` : ""}`
+  );
 }

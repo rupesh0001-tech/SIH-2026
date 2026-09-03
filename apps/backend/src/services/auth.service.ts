@@ -47,8 +47,8 @@ export async function registerUser(data: RegisterInput) {
     user = await prisma.user.update({
       where: { id: existingEmail.id },
       data: {
-        name: data.name,
-        phone: data.phone || existingEmail.phone,
+        name: data.name.trim(),
+        phone: data.phone?.trim() || existingEmail.phone,
         passwordHash,
         role: data.role,
       },
@@ -82,9 +82,9 @@ export async function registerUser(data: RegisterInput) {
     // 3. Create user record in database
     user = await prisma.user.create({
       data: {
-        name: data.name,
+        name: data.name.trim(),
         email: normalizedEmail,
-        phone: data.phone ? data.phone.trim() : null,
+        phone: data.phone?.trim() || null,
         passwordHash,
         role: data.role,
         isVerified: false,
