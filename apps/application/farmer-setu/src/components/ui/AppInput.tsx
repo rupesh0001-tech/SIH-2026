@@ -19,6 +19,8 @@ export const AppInput = memo(function AppInput({
   error,
   isPassword,
   style,
+  autoCapitalize = 'none',
+  autoCorrect = false,
   ...props
 }: AppInputProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +38,9 @@ export const AppInput = memo(function AppInput({
         <TextInput
           placeholderTextColor="#9CA3AF"
           secureTextEntry={isPassword ? !showPassword : false}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          spellCheck={false}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={[styles.input, style]}
@@ -44,7 +49,7 @@ export const AppInput = memo(function AppInput({
         {isPassword ? (
           <Pressable
             onPress={() => setShowPassword((prev) => !prev)}
-            hitSlop={12}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             style={styles.eyeButton}>
             <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
           </Pressable>
@@ -97,8 +102,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   eyeButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: '#E5E7EB',
   },

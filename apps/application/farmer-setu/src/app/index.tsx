@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Image,
   Dimensions,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AppButton } from '@/components/ui/AppButton';
 
@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         bounces={false}
@@ -30,7 +30,6 @@ export default function WelcomeScreen() {
             style={styles.mascotImage}
             resizeMode="cover"
           />
-          <View style={styles.heroGradientOverlay} />
         </View>
 
         {/* Content Section */}
@@ -83,32 +82,24 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
+    paddingBottom: 16,
   },
   heroContainer: {
     width: '100%',
-    height: Math.min(width * 1.12, 440),
-    position: 'relative',
+    height: Math.min(width * 0.95, 380),
     backgroundColor: '#FB923C',
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: 'hidden',
   },
   mascotImage: {
     width: '100%',
     height: '100%',
   },
-  heroGradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    backgroundColor: 'transparent',
-  },
   contentSection: {
-    paddingHorizontal: 26,
-    paddingTop: 24,
-    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 24,
     alignItems: 'center',
     flex: 1,
     justifyContent: 'space-between',
@@ -118,7 +109,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   badgeText: {
     color: '#9A3412',
@@ -127,20 +118,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: '#1C1917',
     textAlign: 'center',
-    lineHeight: 34,
+    lineHeight: 32,
     letterSpacing: -0.5,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     color: '#78716C',
     textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 26,
+    lineHeight: 20,
+    marginBottom: 22,
     paddingHorizontal: 8,
   },
   buttonGroup: {
@@ -148,19 +139,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loginBtn: {
-    backgroundColor: '#F97316', // Warm vibrant agricultural orange
-    height: 54,
+    backgroundColor: '#F97316',
+    height: 52,
   },
   registerBtn: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#E7E5E4',
-    height: 54,
+    height: 52,
   },
   footerNote: {
     fontSize: 12,
     color: '#A8A29E',
-    marginTop: 20,
+    marginTop: 16,
     fontWeight: '500',
   },
 });

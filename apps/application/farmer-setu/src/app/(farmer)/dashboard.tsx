@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,9 +14,9 @@ export default function FarmerDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.container}>
-        {/* Plain Dashboard text as specifically requested */}
+        {/* Plain Dashboard text as requested */}
         <Text style={styles.plainText}>Dashboard</Text>
 
         {/* Minimal farmer session indicator */}
