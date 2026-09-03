@@ -119,6 +119,18 @@ export default function LoginScreen() {
           {error || validationError ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorBannerText}>{error || validationError}</Text>
+              {error && error.toLowerCase().includes('not verified') ? (
+                <Pressable
+                  onPress={() => {
+                    router.push({
+                      pathname: '/(auth)/verify-otp',
+                      params: { email: identifier.trim() },
+                    });
+                  }}
+                  style={styles.verifyNowButton}>
+                  <Text style={styles.verifyNowText}>Enter OTP to Verify →</Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 
@@ -257,6 +269,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     lineHeight: 18,
+  },
+  verifyNowButton: {
+    marginTop: 8,
+    backgroundColor: '#EA580C',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  verifyNowText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   formSection: {
     marginTop: 2,

@@ -13,8 +13,15 @@ import type {
   FarmerUser,
   LoginPayload,
   RegisterPayload,
+  SendOtpPayload,
+  VerifyOtpPayload,
 } from '@/interfaces';
-import { loginFarmerApi, registerFarmerApi } from '@/services/auth.service';
+import {
+  loginFarmerApi,
+  registerFarmerApi,
+  verifyOtpFarmerApi,
+  sendOtpFarmerApi,
+} from '@/services/auth.service';
 
 const TOKEN_STORAGE_KEY = 'kisan_setu_auth_token';
 const USER_STORAGE_KEY = 'kisan_setu_user_profile';
@@ -64,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Rehydrate on initial mount
   useEffect(() => {
     const initial = loadStoredAuth();
-    if (initial.token && initial.user && initial.user.role === 'FARMER') {
+    if (initial.token && initial.user && initial.user.role === 'FARMER' && initial.user.isVerified) {
       setUser(initial.user);
       setToken(initial.token);
     }
@@ -101,15 +108,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await registerFarmerApi(payload);
       setIsLoading(false);
 
-      if (!response.success || !response.data) {
+      if (!response.success) {
         setError(response.message || 'Registration failed. Please verify your details.');
         return false;
       }
 
-      const { user: registeredUser, accessToken } = response.data;
-      setUser(registeredUser);
-      setToken(accessToken);
-      persistStoredAuth(registeredUser, accessToken);
+      return true;
+    },
+    []
+  );
+
+  const verifyOtp = useCallback(
+    async (payload: VerifyOtpPayload): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await verifyOtpFarmerApi(payload);
+      setIsLoading(false);
+
+      if (!response.success || !response.data) {
+        setError(response.message || 'OTP verification failed. Please try again.');
+        return false;
+      }
+
+      if (response.data.user && response.data.accessToken) {
+        const authenticatedUser = response.data.user;
+        const accessToken = response.data.accessToken;
+        setUser(authenticatedUser);
+        setToken(accessToken);
+        persistStoredAuth(authenticatedUser, accessToken);
+      }
+      return true;
+    },
+    []
+  );
+
+  const sendOtp = useCallback(
+    async (payload: SendOtpPayload): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await sendOtpFarmerApi(payload);
+      setIsLoading(false);
+
+      if (!response.success) {
+        setError(response.message || 'Failed to send OTP code.');
+        return false;
+      }
       return true;
     },
     []
@@ -130,10 +175,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       login,
       register,
+      verifyOtp,
+      sendOtp,
       logout,
       clearError,
     }),
-    [user, token, isLoading, error, login, register, logout, clearError]
+    [user, token, isLoading, error, login, register, verifyOtp, sendOtp, logout, clearError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

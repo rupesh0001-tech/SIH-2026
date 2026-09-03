@@ -69,7 +69,13 @@ export default function RegisterScreen() {
     });
 
     if (success) {
-      router.replace('/(farmer)/dashboard');
+      router.push({
+        pathname: '/(auth)/verify-otp',
+        params: {
+          email: cleanEmail,
+          phone: cleanPhone || '',
+        },
+      });
     }
   }, [name, email, phone, password, confirmPassword, register, router, clearError]);
 
