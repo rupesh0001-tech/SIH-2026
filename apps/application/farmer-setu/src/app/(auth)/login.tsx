@@ -52,6 +52,24 @@ export default function LoginScreen() {
     }
   }, [identifier, password, login, router, clearError]);
 
+  const handleIdentifierChange = useCallback(
+    (text: string) => {
+      setIdentifier(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setPassword(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
   const handleSocialPress = useCallback((provider: string) => {
     Alert.alert(
       `${provider} Sign-In`,
@@ -68,7 +86,7 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always">
+          keyboardShouldPersistTaps="handled">
           
           {/* Top Bar with Safe Inset */}
           <View style={styles.topBar}>
@@ -110,25 +128,19 @@ export default function LoginScreen() {
               label="Email or Mobile Phone Number"
               placeholder="e.g. 7028083300 or farmer@example.com"
               value={identifier}
-              onChangeText={(text) => {
-                setIdentifier(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handleIdentifierChange}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="username"
             />
 
             <AppInput
               label="Password"
               placeholder="Enter your password"
               value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handlePasswordChange}
               isPassword
+              autoComplete="current-password"
             />
 
             {/* Remember me & Forgot Password */}

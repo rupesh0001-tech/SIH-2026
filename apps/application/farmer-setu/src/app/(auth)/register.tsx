@@ -73,6 +73,51 @@ export default function RegisterScreen() {
     }
   }, [name, email, phone, password, confirmPassword, register, router, clearError]);
 
+  const handleNameChange = useCallback(
+    (text: string) => {
+      setName(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handlePhoneChange = useCallback(
+    (text: string) => {
+      setPhone(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      setEmail(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setPassword(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handleConfirmPasswordChange = useCallback(
+    (text: string) => {
+      setConfirmPassword(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
   const handleSocialPress = useCallback((provider: string) => {
     Alert.alert(
       `${provider} Registration`,
@@ -89,7 +134,7 @@ export default function RegisterScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always">
+          keyboardShouldPersistTaps="handled">
           
           {/* Top Bar with Safe Inset */}
           <View style={styles.topBar}>
@@ -131,61 +176,46 @@ export default function RegisterScreen() {
               label="Farmer Full Name"
               placeholder="e.g. Ramesh Kisan"
               value={name}
-              onChangeText={(text) => {
-                setName(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handleNameChange}
               autoCapitalize="words"
+              autoComplete="name"
             />
 
             <AppInput
               label="Mobile Phone Number"
               placeholder="e.g. 9876543210"
               value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handlePhoneChange}
               keyboardType="phone-pad"
+              autoComplete="tel"
             />
 
             <AppInput
               label="Email Address"
               placeholder="e.g. ramesh@kisan.com"
               value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handleEmailChange}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
             />
 
             <AppInput
               label="Password"
               placeholder="Min 8 chars (at least 1 letter & 1 number)"
               value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handlePasswordChange}
               isPassword
+              autoComplete="new-password"
             />
 
             <AppInput
               label="Confirm Password"
               placeholder="Re-enter your password"
               value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                if (validationError) setValidationError(null);
-                if (error) clearError();
-              }}
+              onChangeText={handleConfirmPasswordChange}
               isPassword
+              autoComplete="new-password"
             />
 
             {/* CTA */}

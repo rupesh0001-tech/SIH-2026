@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearError = useCallback(() => {
-    setError(null);
+    setError((prev) => (prev !== null ? null : prev));
   }, []);
 
   const login = useCallback(async (payload: LoginPayload): Promise<boolean> => {
