@@ -23,12 +23,12 @@ export default function WelcomeScreen() {
         bounces={false}
         showsVerticalScrollIndicator={false}>
         
-        {/* Top Hero Container with Farmer Mascot */}
+        {/* Top Hero Container with Farmer Mascot (Fully visible without top clipping) */}
         <View style={styles.heroContainer}>
           <Image
             source={require('@/assets/images/farmer-mascot.jpg')}
             style={styles.mascotImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
 
@@ -86,11 +86,14 @@ const styles = StyleSheet.create({
   },
   heroContainer: {
     width: '100%',
-    height: Math.min(width * 0.95, 380),
-    backgroundColor: '#FB923C',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    height: Math.min(width * 1.05, 410),
+    backgroundColor: '#FFA234', // Blends seamlessly with the top gradient of the mascot
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
   },
   mascotImage: {
     width: '100%',
@@ -98,7 +101,7 @@ const styles = StyleSheet.create({
   },
   contentSection: {
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 18,
     paddingBottom: 24,
     alignItems: 'center',
     flex: 1,
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
     color: '#78716C',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 22,
+    marginBottom: 20,
     paddingHorizontal: 8,
   },
   buttonGroup: {
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
   footerNote: {
     fontSize: 12,
     color: '#A8A29E',
-    marginTop: 16,
+    marginTop: 14,
     fontWeight: '500',
   },
 });
