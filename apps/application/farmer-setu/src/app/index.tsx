@@ -39,7 +39,7 @@ export default function WelcomeScreen() {
         <View style={styles.splashContent}>
           <Text style={styles.splashBrand}>🌾 Mandi Setu</Text>
           <Text style={styles.splashSubtitle}>Loading your farmer dashboard...</Text>
-          <ActivityIndicator size="small" color="#16A34A" style={styles.splashSpinner} />
+          <ActivityIndicator size="small" color="#F97316" style={styles.splashSpinner} />
         </View>
       </View>
     );
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   heroContainer: {
     width: '100%',
     height: HERO_HEIGHT,
-    backgroundColor: '#16A34A',
+    backgroundColor: '#F97316',
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   badgeContainer: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#FFEDD5',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     marginBottom: 12,
   },
   badgeText: {
-    color: '#15803D',
+    color: '#C2410C',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loginBtn: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#F97316',
     height: 52,
   },
   registerBtn: {
