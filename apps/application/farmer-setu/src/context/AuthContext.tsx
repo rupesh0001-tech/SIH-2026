@@ -7,7 +7,7 @@ import React, {
   useEffect,
   type ReactNode,
 } from 'react';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   AuthContextType,
   FarmerUser,
@@ -23,40 +23,20 @@ import {
   sendOtpFarmerApi,
 } from '@/services/auth.service';
 
-const TOKEN_STORAGE_KEY = 'kisan_setu_auth_token';
-const USER_STORAGE_KEY = 'kisan_setu_user_profile';
+const TOKEN_STORAGE_KEY = '@kisan_setu_auth_token';
+const USER_STORAGE_KEY = '@kisan_setu_user_profile';
 
-function loadStoredAuth(): { user: FarmerUser | null; token: string | null } {
-  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
-      const storedUser = window.localStorage.getItem(USER_STORAGE_KEY);
-      if (storedToken && storedUser) {
-        return {
-          token: storedToken,
-          user: JSON.parse(storedUser) as FarmerUser,
-        };
-      }
-    } catch {
-      // Storage access failed, ignore
+async function persistStoredAuth(user: FarmerUser | null, token: string | null): Promise<void> {
+  try {
+    if (user && token) {
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+      await AsyncStorage.removeItem(USER_STORAGE_KEY);
     }
-  }
-  return { user: null, token: null };
-}
-
-function persistStoredAuth(user: FarmerUser | null, token: string | null): void {
-  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
-    try {
-      if (user && token) {
-        window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-        window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-      } else {
-        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-        window.localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    } catch {
-      // Storage write failed, ignore
-    }
+  } catch (err) {
+    console.warn('Failed to persist auth to AsyncStorage:', err);
   }
 }
 
@@ -66,15 +46,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FarmerUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Rehydrate on initial mount
+  // Rehydrate auth state from AsyncStorage on app startup
   useEffect(() => {
-    const initial = loadStoredAuth();
-    if (initial.token && initial.user && initial.user.role === 'FARMER' && initial.user.isVerified) {
-      setUser(initial.user);
-      setToken(initial.token);
+    let isMounted = true;
+
+    async function loadAuth() {
+      try {
+        const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
+        const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
+
+        if (isMounted && storedToken && storedUser) {
+          const parsedUser = JSON.parse(storedUser) as FarmerUser;
+          if (parsedUser && parsedUser.role === 'FARMER') {
+            setUser(parsedUser);
+            setToken(storedToken);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to rehydrate auth from AsyncStorage:', err);
+      } finally {
+        if (isMounted) {
+          setIsInitializing(false);
+        }
+      }
     }
+
+    loadAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const clearError = useCallback(() => {
@@ -96,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { user: authenticatedUser, accessToken } = response.data;
     setUser(authenticatedUser);
     setToken(accessToken);
-    persistStoredAuth(authenticatedUser, accessToken);
+    await persistStoredAuth(authenticatedUser, accessToken);
     return true;
   }, []);
 
@@ -136,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const accessToken = response.data.accessToken;
         setUser(authenticatedUser);
         setToken(accessToken);
-        persistStoredAuth(authenticatedUser, accessToken);
+        await persistStoredAuth(authenticatedUser, accessToken);
       }
       return true;
     },
@@ -160,11 +164,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     setToken(null);
     setError(null);
-    persistStoredAuth(null, null);
+    await persistStoredAuth(null, null);
   }, []);
 
   const value = useMemo<AuthContextType>(
@@ -172,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       isLoading,
+      isInitializing,
       error,
       login,
       register,
@@ -180,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       clearError,
     }),
-    [user, token, isLoading, error, login, register, verifyOtp, sendOtp, logout, clearError]
+    [user, token, isLoading, isInitializing, error, login, register, verifyOtp, sendOtp, logout, clearError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

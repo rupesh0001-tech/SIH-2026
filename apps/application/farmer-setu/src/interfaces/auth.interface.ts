@@ -57,6 +57,7 @@ export interface AuthContextType {
   user: FarmerUser | null;
   token: string | null;
   isLoading: boolean;
+  isInitializing: boolean;
   error: string | null;
   login: (payload: LoginPayload) => Promise<boolean>;
   register: (payload: Omit<RegisterPayload, 'role'>) => Promise<boolean>;
@@ -65,3 +66,4 @@ export interface AuthContextType {
   logout: () => void;
   clearError: () => void;
 }
+
