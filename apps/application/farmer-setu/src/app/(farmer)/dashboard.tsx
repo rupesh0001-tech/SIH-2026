@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeColors } from '@/constants/theme';
@@ -18,6 +18,21 @@ export default function FarmerDashboardScreen() {
   const [activeTab, setActiveTab] = useState<NavTabType>('dashboard');
 
   const farmerName = user?.name || 'Ramesh Kisan';
+
+  // Prevent back action from popping back to auth screens
+  useEffect(() => {
+    const onBackPress = () => {
+      if (activeTab !== 'dashboard') {
+        setActiveTab('dashboard');
+        return true;
+      }
+      return true; // prevent going back to auth
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [activeTab]);
+
 
   const getHeaderInfo = useCallback(() => {
     switch (activeTab) {

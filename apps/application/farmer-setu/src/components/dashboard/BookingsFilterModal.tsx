@@ -11,41 +11,45 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
-import type { MandiFilterCriteria } from '@/interfaces';
+import type { BookingsFilterCriteria } from '@/interfaces';
 
-interface MandiFilterModalProps {
+interface BookingsFilterModalProps {
   visible: boolean;
   onClose: () => void;
-  criteria: MandiFilterCriteria;
-  onApply: (criteria: MandiFilterCriteria) => void;
+  criteria: BookingsFilterCriteria;
+  onApply: (criteria: BookingsFilterCriteria) => void;
   onReset: () => void;
 }
 
-const CROP_LIST = ['All Crops', 'Onion', 'Soybean', 'Cotton', 'Wheat', 'Tomato', 'Maize'];
-const LOCATION_LIST = ['All Locations', 'Nashik', 'Lasalgaon', 'Pune', 'Nagpur', 'Ahmednagar'];
-const FARMER_CHIPS = ['Any Count', '50+ Farmers', '100+ Farmers', '200+ Farmers'];
+const CROP_LIST = ['All Crops', 'Onion', 'Soybean', 'Cotton', 'Wheat'];
+const STATUS_LIST = [
+  { id: 'all', label: 'All Status' },
+  { id: 'in_progress', label: 'In Progress' },
+  { id: 'confirmed', label: 'Confirmed' },
+  { id: 'completed', label: 'Completed' },
+];
 
-export const MandiFilterModal = memo(function MandiFilterModal({
+export const BookingsFilterModal = memo(function BookingsFilterModal({
   visible,
   onClose,
   criteria,
   onApply,
   onReset,
-}: MandiFilterModalProps) {
+}: BookingsFilterModalProps) {
   const [selectedCrop, setSelectedCrop] = useState(criteria.selectedCrop || 'All Crops');
   const [manualCrop, setManualCrop] = useState(criteria.manualCrop || '');
-  const [selectedLocation, setSelectedLocation] = useState(criteria.selectedLocation || 'All Locations');
   const [manualDate, setManualDate] = useState(criteria.manualDate || '');
   const [minFarmers, setMinFarmers] = useState(criteria.minFarmers || '');
+  const [status, setStatus] = useState(criteria.status || 'all');
 
   const handleApply = () => {
     onApply({
       ...criteria,
       selectedCrop,
       manualCrop,
-      selectedLocation,
       manualDate,
       minFarmers,
+      status,
     });
     onClose();
   };
@@ -53,9 +57,9 @@ export const MandiFilterModal = memo(function MandiFilterModal({
   const handleReset = () => {
     setSelectedCrop('All Crops');
     setManualCrop('');
-    setSelectedLocation('All Locations');
     setManualDate('');
     setMinFarmers('');
+    setStatus('all');
     onReset();
     onClose();
   };
@@ -73,8 +77,8 @@ export const MandiFilterModal = memo(function MandiFilterModal({
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Filter Mandis & Auctions</Text>
-              <Text style={styles.subtitle}>Filter by date, farmers count, and custom crop</Text>
+              <Text style={styles.title}>Filter My Bookings</Text>
+              <Text style={styles.subtitle}>Filter by custom date, crop, lots & status</Text>
             </View>
             <Pressable
               onPress={onClose}
@@ -85,12 +89,12 @@ export const MandiFilterModal = memo(function MandiFilterModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
-            {/* Filter 1: Crop (Manual + Quick Chips) */}
-            <Text style={styles.sectionHeading}>1. Crop / Commodity (Select or Type)</Text>
+            {/* 1. Crop Filter (Manual + Quick Chips) */}
+            <Text style={styles.sectionHeading}>1. Crop / Produce (Select or Type)</Text>
             <View style={styles.manualInputWrapper}>
               <Ionicons name="leaf-outline" size={16} color={ThemeColors.mintDark} />
               <TextInput
-                placeholder="Type custom crop name (e.g. Garlic, Grapes)..."
+                placeholder="Type crop name (e.g. Onion, Soybean)..."
                 placeholderTextColor="#9CA3AF"
                 value={manualCrop}
                 onChangeText={setManualCrop}
@@ -121,12 +125,12 @@ export const MandiFilterModal = memo(function MandiFilterModal({
               })}
             </View>
 
-            {/* Filter 2: Manual Date Selection */}
-            <Text style={styles.sectionHeading}>2. Arrival Date (Manual Entry)</Text>
+            {/* 2. Manual Date Entry */}
+            <Text style={styles.sectionHeading}>2. Slot Booking Date (Manual)</Text>
             <View style={styles.manualInputWrapper}>
               <Ionicons name="calendar-outline" size={16} color={ThemeColors.lavenderDark} />
               <TextInput
-                placeholder="Enter date (e.g. 15/09/2026 or Today)..."
+                placeholder="Enter slot date (e.g. 08/09/2026 or Today)..."
                 placeholderTextColor="#9CA3AF"
                 value={manualDate}
                 onChangeText={setManualDate}
@@ -138,66 +142,33 @@ export const MandiFilterModal = memo(function MandiFilterModal({
                 </Pressable>
               ) : null}
             </View>
-            <View style={styles.chipGrid}>
-              {['Today', 'Tomorrow', 'This Week'].map((d) => (
-                <Pressable
-                  key={d}
-                  onPress={() => setManualDate(d)}
-                  style={[styles.chip, manualDate === d ? styles.chipActive : styles.chipInactive]}>
-                  <Text style={[styles.chipText, manualDate === d ? styles.chipTextActive : styles.chipTextInactive]}>
-                    {d}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
 
-            {/* Filter 3: Number of Farmers (Manual Entry) */}
-            <Text style={styles.sectionHeading}>3. Active Farmers in Queue (Manual)</Text>
+            {/* 3. Number of Quintals / Farmers */}
+            <Text style={styles.sectionHeading}>3. Quantity / Lots in Quintals</Text>
             <View style={styles.manualInputWrapper}>
-              <Ionicons name="people-outline" size={16} color={ThemeColors.peachDark} />
+              <Ionicons name="cube-outline" size={16} color={ThemeColors.peachDark} />
               <TextInput
-                placeholder="Min number of farmers (e.g. 50)..."
+                placeholder="Min quintals (e.g. 100 Qtl)..."
                 placeholderTextColor="#9CA3AF"
                 keyboardType="number-pad"
                 value={minFarmers}
                 onChangeText={setMinFarmers}
                 style={styles.manualInput}
               />
-              {minFarmers ? (
-                <Pressable onPress={() => setMinFarmers('')}>
-                  <Ionicons name="close-circle" size={15} color="#9CA3AF" />
-                </Pressable>
-              ) : null}
-            </View>
-            <View style={styles.chipGrid}>
-              {FARMER_CHIPS.map((chip) => {
-                const count = chip.replace('Any Count', '').replace('+ Farmers', '').trim();
-                const active = minFarmers === count;
-                return (
-                  <Pressable
-                    key={chip}
-                    onPress={() => setMinFarmers(count)}
-                    style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}>
-                    <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
-                      {chip}
-                    </Text>
-                  </Pressable>
-                );
-              })}
             </View>
 
-            {/* Filter 4: Location Selection */}
-            <Text style={styles.sectionHeading}>4. APMC District / Location</Text>
+            {/* 4. Slot Status */}
+            <Text style={styles.sectionHeading}>4. Booking Status</Text>
             <View style={styles.chipGrid}>
-              {LOCATION_LIST.map((loc) => {
-                const active = selectedLocation === loc;
+              {STATUS_LIST.map((s) => {
+                const active = status === s.id;
                 return (
                   <Pressable
-                    key={loc}
-                    onPress={() => setSelectedLocation(loc)}
+                    key={s.id}
+                    onPress={() => setStatus(s.id)}
                     style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}>
                     <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
-                      {loc}
+                      {s.label}
                     </Text>
                   </Pressable>
                 );
@@ -234,7 +205,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 36 : 20,
-    maxHeight: '88%',
+    maxHeight: '85%',
   },
   dragIndicator: {
     width: 36,

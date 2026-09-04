@@ -46,7 +46,7 @@ export const AppButton = memo(function AppButton({
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' ? '#EA580C' : '#FFFFFF'}
+          color={variant === 'outline' ? '#16A34A' : '#FFFFFF'}
         />
       ) : children ? (
         children
@@ -83,18 +83,18 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   primary: {
-    backgroundColor: '#F97316', // Vibrant warm agricultural orange
-    shadowColor: '#F97316',
+    backgroundColor: '#16A34A', // Dashboard mint/emerald green
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 4,
   },
   accent: {
-    backgroundColor: '#16A34A', // Vibrant agricultural emerald green
-    shadowColor: '#16A34A',
+    backgroundColor: '#A28EF9', // Dashboard lavender
+    shadowColor: '#A28EF9',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 4,
   },
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#EA580C',
+    borderColor: '#16A34A',
   },
   baseText: {
     fontSize: 16,
@@ -123,9 +123,10 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   outlineText: {
-    color: '#EA580C',
+    color: '#16A34A',
   },
   disabledText: {
     color: '#9CA3AF',
   },
 });
+

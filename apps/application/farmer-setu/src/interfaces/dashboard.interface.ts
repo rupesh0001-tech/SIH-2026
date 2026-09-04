@@ -61,6 +61,7 @@ export interface MandiItem {
   longitude?: number;
   todayArrivalsQtl?: number;
   operatingHours?: string;
+  activeFarmersCount: number;
 }
 
 export interface MandiFilterCriteria {
@@ -68,7 +69,19 @@ export interface MandiFilterCriteria {
   selectedCrop: string;
   selectedLocation: string;
   selectedDate: string;
+  manualDate: string;
+  manualCrop: string;
+  minFarmers: string;
   timeSlot: string;
+}
+
+export interface BookingsFilterCriteria {
+  searchQuery: string;
+  selectedCrop: string;
+  manualDate: string;
+  manualCrop: string;
+  minFarmers: string;
+  status: string;
 }
 
 export type BookingViewMode = 'table' | 'cards';
@@ -79,4 +92,5 @@ export interface DayPickerItem {
   dateKey: string;
   isToday?: boolean;
 }
+
 

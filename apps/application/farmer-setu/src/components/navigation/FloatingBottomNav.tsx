@@ -68,7 +68,7 @@ export const FloatingBottomNav = memo(function FloatingBottomNav({
               <Ionicons
                 name={isActive ? item.activeIcon : item.inactiveIcon}
                 size={isActive ? 22 : 22}
-                color={isActive ? ThemeColors.darkNav : 'rgba(255, 255, 255, 0.7)'}
+                color={isActive ? ThemeColors.navActiveIcon : ThemeColors.navInactiveIcon}
               />
             </Pressable>
           );
@@ -92,17 +92,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: ThemeColors.darkNav,
+    backgroundColor: ThemeColors.navBg,
     borderRadius: 36,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#1A1538',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    elevation: 8,
+    borderWidth: 1.5,
+    borderColor: ThemeColors.navBorder,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
     gap: 12,
   },
 
@@ -114,11 +114,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navItemActive: {
-    backgroundColor: ThemeColors.white,
-    shadowColor: '#000000',
+    backgroundColor: ThemeColors.navActiveBg,
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
   navItemPressed: {
@@ -126,3 +126,4 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.94 }],
   },
 });
+

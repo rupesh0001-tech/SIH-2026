@@ -8,7 +8,8 @@ export const ThemeColors = {
 
   mint: '#A4F5A6',
   mintLight: '#ECFCEC',
-  mintDark: '#2E7D32',
+  mintDark: '#16A34A',
+  mintDeep: '#15803D',
 
   peach: '#FFD89D',
   peachLight: '#FFF7EA',
@@ -18,10 +19,18 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Refined palette-matching navigation & accents (No plain black)
-  darkNav: '#2C274C',
-  darkNavActive: '#FFFFFF',
+  // Light Greenish Floating Navigation Bar (Light fade green)
+  navBg: '#E8F7EC',
+  navBorder: '#C8EED2',
+  navActiveBg: '#16A34A',
+  navActiveIcon: '#FFFFFF',
+  navInactiveIcon: '#2D6A4F',
+  darkNav: '#16A34A',
 
+  // Consistent Brand Action Colors across entire app
+  primary: '#16A34A',
+  primaryHover: '#15803D',
+  primaryLight: '#DCFCE7',
 
   // Text
   textPrimary: '#111827',
@@ -46,10 +55,10 @@ export const Colors = {
     background: '#FFFFFF',
     backgroundElement: '#F1F3F5',
     backgroundSelected: '#E6E8EB',
-    tint: '#0a7ea4',
+    tint: '#16A34A',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: '#0a7ea4',
+    tabIconSelected: '#16A34A',
   },
   dark: {
     text: '#ECEDEE',

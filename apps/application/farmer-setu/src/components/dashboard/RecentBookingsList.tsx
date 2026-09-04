@@ -60,66 +60,48 @@ export const RecentBookingsList = memo(function RecentBookingsList({
         ) : null}
       </View>
 
-      {/* Compact Table View */}
-      <View style={styles.tableCard}>
-        {/* Table Header */}
-        <View style={styles.tableHeaderRow}>
-          <Text style={[styles.headerCell, { flex: 2.2 }]}>Crop & Slot</Text>
-          <Text style={[styles.headerCell, { flex: 1.8 }]}>Mandi</Text>
-          <Text style={[styles.headerCell, { flex: 1.4 }]}>Qty / Date</Text>
-          <Text style={[styles.headerCell, { flex: 1.4, textAlign: 'right' }]}>Status</Text>
-        </View>
-
-        {/* Table Rows */}
-        {bookings.map((booking, index) => {
+      {/* Sleek Booking Cards (No heavy progression bars) */}
+      <View style={styles.cardsList}>
+        {bookings.map((booking) => {
           const statusStyle = getStatusBadge(booking.status);
-          const isLast = index === bookings.length - 1;
 
           return (
             <Pressable
               key={booking.id}
               onPress={() => onBookingPress?.(booking.id)}
-              style={({ pressed }) => [
-                styles.tableRow,
-                !isLast && styles.rowBorder,
-                pressed && styles.rowPressed,
-              ]}>
-              {/* Crop & Booking Code */}
-              <View style={{ flex: 2.2 }}>
-                <Text numberOfLines={1} style={styles.cropText}>
-                  {booking.cropName}
-                </Text>
-                <Text numberOfLines={1} style={styles.codeText}>
-                  #{booking.bookingCode}
-                </Text>
-              </View>
-
-              {/* Mandi Name */}
-              <View style={{ flex: 1.8, paddingRight: 4 }}>
-                <Text numberOfLines={1} style={styles.mandiText}>
-                  {booking.mandiName.replace(' APMC', '').replace(' Market', '')}
-                </Text>
-                <Text numberOfLines={1} style={styles.subMandiText}>
-                  {booking.gateNo}
-                </Text>
-              </View>
-
-              {/* Quantity & Date */}
-              <View style={{ flex: 1.4 }}>
-                <Text numberOfLines={1} style={styles.qtyText}>
-                  {booking.quantityQuintals} Qtl
-                </Text>
-                <Text numberOfLines={1} style={styles.dateText}>
-                  {booking.dateString.split(',')[0]}
-                </Text>
-              </View>
-
-              {/* Status Badge */}
-              <View style={{ flex: 1.4, alignItems: 'flex-end' }}>
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+              
+              {/* Header: Status pill and Slot Code */}
+              <View style={styles.cardHeader}>
                 <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-                  <Text numberOfLines={1} style={[styles.statusText, { color: statusStyle.text }]}>
+                  <Text style={[styles.statusText, { color: statusStyle.text }]}>
                     {statusStyle.label}
                   </Text>
+                </View>
+                <Text style={styles.codeText}>#{booking.bookingCode}</Text>
+              </View>
+
+              {/* Crop & Mandi info */}
+              <Text style={styles.cropTitle}>
+                {booking.cropName} ({booking.cropVariety})
+              </Text>
+              <Text style={styles.mandiSubtitle}>
+                {booking.mandiName} • {booking.gateNo}
+              </Text>
+
+              {/* Details footer */}
+              <View style={styles.cardFooter}>
+                <View style={styles.infoCol}>
+                  <Ionicons name="calendar-outline" size={13} color={ThemeColors.textSecondary} />
+                  <Text style={styles.infoText}>{booking.dateString}</Text>
+                </View>
+                <View style={styles.infoCol}>
+                  <Ionicons name="time-outline" size={13} color={ThemeColors.textSecondary} />
+                  <Text style={styles.infoText}>{booking.timeSlot}</Text>
+                </View>
+                <View style={styles.infoCol}>
+                  <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
+                  <Text style={styles.infoText}>{booking.quantityQuintals} Qtl</Text>
                 </View>
               </View>
             </Pressable>
@@ -133,7 +115,7 @@ export const RecentBookingsList = memo(function RecentBookingsList({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    marginTop: 14,
+    marginTop: 16,
     marginBottom: 90,
   },
   sectionHeader: {
@@ -161,9 +143,13 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  tableCard: {
+  cardsList: {
+    gap: 10,
+  },
+  card: {
     backgroundColor: ThemeColors.white,
     borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#EFEFEF',
     shadowColor: '#000',
@@ -171,63 +157,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 1,
-    overflow: 'hidden',
   },
-  tableHeaderRow: {
+  cardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.985 }],
+  },
+  cardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  headerCell: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: ThemeColors.textMuted,
-    textTransform: 'uppercase',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  rowPressed: {
-    backgroundColor: '#F9FAFB',
-  },
-  cropText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ThemeColors.textPrimary,
-  },
-  codeText: {
-    fontSize: 11,
-    color: ThemeColors.textMuted,
-    fontWeight: '500',
-  },
-  mandiText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: ThemeColors.textPrimary,
-  },
-  subMandiText: {
-    fontSize: 10,
-    color: ThemeColors.textSecondary,
-  },
-  qtyText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: ThemeColors.textPrimary,
-  },
-  dateText: {
-    fontSize: 10,
-    color: ThemeColors.textSecondary,
+    marginBottom: 8,
   },
   statusPill: {
     paddingHorizontal: 8,
@@ -235,7 +174,41 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
+  },
+  codeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ThemeColors.textMuted,
+  },
+  cropTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: ThemeColors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  mandiSubtitle: {
+    fontSize: 13,
+    color: ThemeColors.textSecondary,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F5',
+  },
+  infoCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 12,
+    color: ThemeColors.textSecondary,
+    fontWeight: '500',
   },
 });

@@ -1,7 +1,10 @@
 import React, { memo } from 'react';
 import { ScrollView, StyleSheet, View, Alert } from 'react-native';
 import { StatCardsList } from './StatCardsList';
+import { QuickActionsGrid } from './QuickActionsGrid';
+import { CommodityTickerSection } from './CommodityTickerSection';
 import { SuggestionCard } from './SuggestionCard';
+import { WeatherWidget } from './WeatherWidget';
 import { RecentBookingsList } from './RecentBookingsList';
 import type { StatCardItem, SuggestionItem, BookingItem } from '@/interfaces';
 
@@ -68,7 +71,7 @@ const STATIC_RECENT_BOOKINGS: BookingItem[] = [
     cropVariety: 'Nashik Red A-Grade',
     mandiName: 'Nashik APMC Mandi',
     gateNo: 'Gate 3',
-    dateString: 'May 28, 2026',
+    dateString: 'Sep 08, 2026',
     timeSlot: '09:30 AM',
     status: 'in_progress',
     statusLabel: 'In progress',
@@ -83,28 +86,13 @@ const STATIC_RECENT_BOOKINGS: BookingItem[] = [
     cropVariety: 'Medium Staple',
     mandiName: 'Nagpur APMC Hub',
     gateNo: 'Gate 1',
-    dateString: 'May 30, 2026',
+    dateString: 'Sep 12, 2026',
     timeSlot: '11:00 AM',
     status: 'confirmed',
     statusLabel: 'Confirmed',
     progressPercent: 20,
     progressLabel: 'Vehicle Entry QR Pass Generated',
     quantityQuintals: 180,
-  },
-  {
-    id: 'b-3',
-    bookingCode: 'BK-7612',
-    cropName: 'Wheat (Sharbati)',
-    cropVariety: 'Grade A',
-    mandiName: 'Lasalgaon Mandi',
-    gateNo: 'Gate 2',
-    dateString: 'Jun 02, 2026',
-    timeSlot: '02:00 PM',
-    status: 'confirmed',
-    statusLabel: 'Confirmed',
-    progressPercent: 10,
-    progressLabel: 'QR Pass Issued',
-    quantityQuintals: 320,
   },
 ];
 
@@ -141,13 +129,25 @@ export const DashboardMainView = memo(function DashboardMainView({
         <StatCardsList stats={STATIC_STATS} onCardPress={handleStatPress} />
       </View>
 
+      {/* Quick Actions Grid */}
+      <QuickActionsGrid
+        onBookPassPress={onNavigateToMandi}
+        onAdvisoryPress={handleSuggestionPress}
+      />
+
+      {/* Live APMC Commodity Price Ticker */}
+      <CommodityTickerSection onSelectCrop={() => onNavigateToMandi()} />
+
+      {/* Weather & Harvesting Advisory */}
+      <WeatherWidget />
+
       {/* AI Suggestion Advisory */}
       <SuggestionCard
         suggestion={STATIC_SUGGESTION}
         onPress={handleSuggestionPress}
       />
 
-      {/* Recent Bookings Compact Table */}
+      {/* Recent Bookings Cards */}
       <RecentBookingsList
         bookings={STATIC_RECENT_BOOKINGS}
         onViewAllPress={onNavigateToBookings}

@@ -14,6 +14,8 @@ import { MandiFilterModal } from './MandiFilterModal';
 import { MandiMapViewModal } from './MandiMapViewModal';
 import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
+const ITEMS_PER_PAGE = 3;
+
 const STATIC_MANDIS: MandiItem[] = [
   {
     id: 'mandi-1',
@@ -26,6 +28,7 @@ const STATIC_MANDIS: MandiItem[] = [
     trendDirection: 'up',
     estimatedQueueTime: '25 mins wait',
     isOpen: true,
+    activeFarmersCount: 142,
   },
   {
     id: 'mandi-2',
@@ -38,6 +41,7 @@ const STATIC_MANDIS: MandiItem[] = [
     trendDirection: 'up',
     estimatedQueueTime: '45 mins wait',
     isOpen: true,
+    activeFarmersCount: 210,
   },
   {
     id: 'mandi-3',
@@ -50,6 +54,7 @@ const STATIC_MANDIS: MandiItem[] = [
     trendDirection: 'down',
     estimatedQueueTime: '15 mins wait',
     isOpen: true,
+    activeFarmersCount: 88,
   },
   {
     id: 'mandi-4',
@@ -62,6 +67,7 @@ const STATIC_MANDIS: MandiItem[] = [
     trendDirection: 'up',
     estimatedQueueTime: '30 mins wait',
     isOpen: true,
+    activeFarmersCount: 165,
   },
   {
     id: 'mandi-5',
@@ -74,6 +80,20 @@ const STATIC_MANDIS: MandiItem[] = [
     trendDirection: 'up',
     estimatedQueueTime: '20 mins wait',
     isOpen: true,
+    activeFarmersCount: 75,
+  },
+  {
+    id: 'mandi-6',
+    name: 'Pimpalgaon Onion Yard',
+    district: 'Pimpalgaon, Maharashtra',
+    distanceKm: 18.5,
+    topCrop: 'Onion & Tomato',
+    modalPrice: '₹2,720 / qtl',
+    priceTrend: '+₹80 today',
+    trendDirection: 'up',
+    estimatedQueueTime: '20 mins wait',
+    isOpen: true,
+    activeFarmersCount: 115,
   },
 ];
 
@@ -82,6 +102,9 @@ const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
   selectedCrop: 'All Crops',
   selectedLocation: 'All Locations',
   selectedDate: 'Today',
+  manualDate: '',
+  manualCrop: '',
+  minFarmers: '',
   timeSlot: 'Any Time',
 };
 
@@ -89,10 +112,11 @@ export const MandiSectionView = memo(function MandiSectionView() {
   const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredMandis = useMemo(() => {
     return STATIC_MANDIS.filter((mandi) => {
-      // 1. Text Search query (Name, crop, district)
+      // 1. Text Search query
       if (criteria.searchQuery.trim()) {
         const query = criteria.searchQuery.toLowerCase();
         const matchesName = mandi.name.toLowerCase().includes(query);
@@ -101,9 +125,10 @@ export const MandiSectionView = memo(function MandiSectionView() {
         if (!matchesName && !matchesCrop && !matchesDistrict) return false;
       }
 
-      // 2. Crop filter
-      if (criteria.selectedCrop && criteria.selectedCrop !== 'All Crops') {
-        if (!mandi.topCrop.toLowerCase().includes(criteria.selectedCrop.toLowerCase())) {
+      // 2. Crop filter (Preset or manual)
+      const targetCrop = criteria.manualCrop.trim() || (criteria.selectedCrop !== 'All Crops' ? criteria.selectedCrop : '');
+      if (targetCrop) {
+        if (!mandi.topCrop.toLowerCase().includes(targetCrop.toLowerCase())) {
           return false;
         }
       }
@@ -115,23 +140,39 @@ export const MandiSectionView = memo(function MandiSectionView() {
         }
       }
 
+      // 4. Farmers Count filter
+      if (criteria.minFarmers.trim()) {
+        const min = parseInt(criteria.minFarmers, 10);
+        if (!isNaN(min) && mandi.activeFarmersCount < min) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [criteria]);
 
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredMandis.length / ITEMS_PER_PAGE));
+  const paginatedMandis = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredMandis.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredMandis, currentPage]);
+
   const handleBookSlot = (mandi: MandiItem) => {
     Alert.alert(
       'Book Mandi Gate Slot',
-      `Booking slot at ${mandi.name} for ${criteria.selectedDate} (${criteria.timeSlot}).`,
+      `Booking slot at ${mandi.name} for ${criteria.manualDate || criteria.selectedDate}.`,
       [{ text: 'Proceed to Vehicle Details' }]
     );
   };
 
   const hasActiveFilters =
     criteria.selectedCrop !== 'All Crops' ||
+    Boolean(criteria.manualCrop) ||
     criteria.selectedLocation !== 'All Locations' ||
-    criteria.selectedDate !== 'Today' ||
-    criteria.timeSlot !== 'Any Time';
+    Boolean(criteria.manualDate) ||
+    Boolean(criteria.minFarmers);
 
   return (
     <ScrollView
@@ -146,9 +187,10 @@ export const MandiSectionView = memo(function MandiSectionView() {
             placeholder="Search mandi, crop, location..."
             placeholderTextColor="#9CA3AF"
             value={criteria.searchQuery}
-            onChangeText={(text) =>
-              setCriteria((prev) => ({ ...prev, searchQuery: text }))
-            }
+            onChangeText={(text) => {
+              setCriteria((prev) => ({ ...prev, searchQuery: text }));
+              setCurrentPage(1);
+            }}
             style={styles.searchInput}
           />
           {criteria.searchQuery ? (
@@ -170,7 +212,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
           <Ionicons
             name="options-outline"
             size={20}
-            color={hasActiveFilters ? '#FFFFFF' : ThemeColors.darkNav}
+            color={hasActiveFilters ? '#FFFFFF' : '#16A34A'}
           />
         </Pressable>
 
@@ -182,35 +224,38 @@ export const MandiSectionView = memo(function MandiSectionView() {
         </Pressable>
       </View>
 
-      {/* Active Filter Chips bar if any filter selected */}
+      {/* Active Filter Chips */}
       {hasActiveFilters ? (
         <View style={styles.activeFiltersRow}>
           <Text style={styles.activeFiltersLabel}>Filters:</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
-            {criteria.selectedCrop !== 'All Crops' ? (
+            {criteria.manualCrop || criteria.selectedCrop !== 'All Crops' ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.selectedCrop}</Text>
+                <Text style={styles.activePillText}>🌾 {criteria.manualCrop || criteria.selectedCrop}</Text>
+              </View>
+            ) : null}
+            {criteria.manualDate ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>📅 {criteria.manualDate}</Text>
+              </View>
+            ) : null}
+            {criteria.minFarmers ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>👥 {criteria.minFarmers}+ Farmers</Text>
               </View>
             ) : null}
             {criteria.selectedLocation !== 'All Locations' ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.selectedLocation}</Text>
-              </View>
-            ) : null}
-            {criteria.selectedDate !== 'Today' ? (
-              <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.selectedDate}</Text>
-              </View>
-            ) : null}
-            {criteria.timeSlot !== 'Any Time' ? (
-              <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.timeSlot}</Text>
+                <Text style={styles.activePillText}>📍 {criteria.selectedLocation}</Text>
               </View>
             ) : null}
             <Pressable
-              onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+              onPress={() => {
+                setCriteria(INITIAL_FILTER_CRITERIA);
+                setCurrentPage(1);
+              }}
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
-              <Text style={styles.clearAllText}>Clear All</Text>
+              <Text style={styles.clearAllText}>Clear</Text>
             </Pressable>
           </ScrollView>
         </View>
@@ -218,25 +263,28 @@ export const MandiSectionView = memo(function MandiSectionView() {
 
       {/* Quick Location Hint */}
       <View style={styles.locationHintRow}>
-        <Ionicons name="navigate-circle" size={15} color={ThemeColors.lavenderDark} />
-        <Text style={styles.locationHintText}>Showing verified APMC mandis near Niphad (Nashik)</Text>
+        <Ionicons name="navigate-circle" size={15} color="#16A34A" />
+        <Text style={styles.locationHintText}>Showing {filteredMandis.length} verified APMC mandis near Niphad</Text>
       </View>
 
       {/* Mandis List */}
       <View style={styles.list}>
-        {filteredMandis.length === 0 ? (
+        {paginatedMandis.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="search-outline" size={32} color="#9CA3AF" />
             <Text style={styles.emptyTitle}>No matching mandis found</Text>
             <Text style={styles.emptySubtitle}>Try changing your crop or location filters.</Text>
             <Pressable
-              onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+              onPress={() => {
+                setCriteria(INITIAL_FILTER_CRITERIA);
+                setCurrentPage(1);
+              }}
               style={styles.resetSearchBtn}>
               <Text style={styles.resetSearchText}>Reset All Filters</Text>
             </Pressable>
           </View>
         ) : (
-          filteredMandis.map((mandi) => (
+          paginatedMandis.map((mandi) => (
             <View key={mandi.id} style={styles.card}>
               {/* Top row: Status & Distance */}
               <View style={styles.cardHeader}>
@@ -278,6 +326,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
                     </Text>
                   </View>
                   <Text style={styles.queueText}>⏱ {mandi.estimatedQueueTime}</Text>
+                  <Text style={styles.farmerCountText}>👥 {mandi.activeFarmersCount} Farmers in queue</Text>
                 </View>
               </View>
 
@@ -306,13 +355,54 @@ export const MandiSectionView = memo(function MandiSectionView() {
         )}
       </View>
 
+      {/* Pagination Bar */}
+      {totalPages > 1 ? (
+        <View style={styles.paginationRow}>
+          <Pressable
+            disabled={currentPage <= 1}
+            onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            style={[styles.pageBtn, currentPage <= 1 && styles.pageBtnDisabled]}>
+            <Ionicons
+              name="chevron-back"
+              size={16}
+              color={currentPage <= 1 ? '#9CA3AF' : ThemeColors.textPrimary}
+            />
+            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>Prev</Text>
+          </Pressable>
+
+          <View style={styles.pageIndicatorPill}>
+            <Text style={styles.pageIndicatorText}>
+              Page {currentPage} of {totalPages}
+            </Text>
+          </View>
+
+          <Pressable
+            disabled={currentPage >= totalPages}
+            onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            style={[styles.pageBtn, currentPage >= totalPages && styles.pageBtnDisabled]}>
+            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>Next</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={currentPage >= totalPages ? '#9CA3AF' : ThemeColors.textPrimary}
+            />
+          </Pressable>
+        </View>
+      ) : null}
+
       {/* Multi-Criteria Filter Modal */}
       <MandiFilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         criteria={criteria}
-        onApply={(newCriteria) => setCriteria(newCriteria)}
-        onReset={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+        onApply={(newCriteria) => {
+          setCriteria(newCriteria);
+          setCurrentPage(1);
+        }}
+        onReset={() => {
+          setCriteria(INITIAL_FILTER_CRITERIA);
+          setCurrentPage(1);
+        }}
       />
 
       {/* Interactive Map Radar Modal */}
@@ -365,19 +455,19 @@ const styles = StyleSheet.create({
     borderColor: '#EFEFEF',
   },
   filterBtnActive: {
-    backgroundColor: ThemeColors.darkNav,
-    borderColor: ThemeColors.darkNav,
+    backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
   },
   mapBtn: {
-    backgroundColor: ThemeColors.lavenderDark,
-    borderColor: ThemeColors.lavenderDark,
+    backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
   },
   activeFiltersRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 10,
-    gap: 8,
+    marginTop: 8,
+    gap: 6,
   },
   activeFiltersLabel: {
     fontSize: 11,
@@ -389,7 +479,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activePill: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -397,7 +487,7 @@ const styles = StyleSheet.create({
   activePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: ThemeColors.lavenderDark,
+    color: '#15803D',
   },
   clearAllText: {
     fontSize: 11,
@@ -409,7 +499,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 10,
+    marginTop: 8,
     gap: 6,
   },
   locationHintText: {
@@ -510,7 +600,7 @@ const styles = StyleSheet.create({
   },
   trendCol: {
     alignItems: 'flex-end',
-    gap: 4,
+    gap: 3,
   },
   trendBadge: {
     paddingHorizontal: 8,
@@ -538,20 +628,25 @@ const styles = StyleSheet.create({
     color: ThemeColors.textSecondary,
     fontWeight: '500',
   },
+  farmerCountText: {
+    fontSize: 10,
+    color: ThemeColors.textMuted,
+    fontWeight: '600',
+  },
   actionsRow: {
     flexDirection: 'row',
     gap: 10,
   },
   primaryBtn: {
     flex: 1,
-    backgroundColor: ThemeColors.darkNav,
+    backgroundColor: '#16A34A',
     paddingVertical: 11,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryBtnText: {
-    color: ThemeColors.white,
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -567,6 +662,46 @@ const styles = StyleSheet.create({
     color: ThemeColors.textPrimary,
     fontSize: 13,
     fontWeight: '700',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  pageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ThemeColors.white,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  pageBtnDisabled: {
+    opacity: 0.45,
+  },
+  pageBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ThemeColors.textPrimary,
+  },
+  pageTextDisabled: {
+    color: '#9CA3AF',
+  },
+  pageIndicatorPill: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pageIndicatorText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803D',
   },
   emptyCard: {
     backgroundColor: ThemeColors.white,
@@ -591,7 +726,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resetSearchBtn: {
-    backgroundColor: ThemeColors.darkNav,
+    backgroundColor: '#16A34A',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,

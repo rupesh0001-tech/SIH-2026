@@ -18,8 +18,14 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)/login" />
           <Stack.Screen name="(auth)/register" />
           <Stack.Screen name="(auth)/verify-otp" />
-          <Stack.Screen name="(farmer)/dashboard" />
+          <Stack.Screen
+            name="(farmer)/dashboard"
+            options={{
+              gestureEnabled: false,
+            }}
+          />
         </Stack>
+
       </AuthProvider>
     </SafeAreaProvider>
   );

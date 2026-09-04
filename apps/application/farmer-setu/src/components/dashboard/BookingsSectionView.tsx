@@ -10,7 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
-import type { BookingItem, BookingStatus, BookingViewMode } from '@/interfaces';
+import { BookingsFilterModal } from './BookingsFilterModal';
+import type { BookingItem, BookingStatus, BookingsFilterCriteria } from '@/interfaces';
+
+const ITEMS_PER_PAGE = 3;
 
 const STATIC_ALL_BOOKINGS: BookingItem[] = [
   {
@@ -20,15 +23,14 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     cropVariety: 'Nashik Red A-Grade',
     mandiName: 'Nashik APMC Mandi',
     gateNo: 'Gate 3 (Bay 12)',
-    dateString: 'Sep 08, 2026',
+    dateString: '08/09/2026',
     timeSlot: '08:30 AM – 10:00 AM',
     status: 'in_progress',
     statusLabel: 'In Progress',
     progressPercent: 65,
-    progressLabel: 'Grading & Assay in Progress',
+    progressLabel: 'Grading & Quality Assay',
     inspectorName: 'Assayer R. Patil',
     quantityQuintals: 240,
-    commentsCount: 3,
   },
   {
     id: 'b-2',
@@ -37,7 +39,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     cropVariety: 'JS-335 Organic',
     mandiName: 'Pune Market Yard',
     gateNo: 'Gate 1 (E-Weighbridge)',
-    dateString: 'Sep 12, 2026',
+    dateString: '12/09/2026',
     timeSlot: '10:30 AM – 12:00 PM',
     status: 'confirmed',
     statusLabel: 'Confirmed',
@@ -45,7 +47,6 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     progressLabel: 'QR Pass Issued',
     inspectorName: 'Officer Deshmukh',
     quantityQuintals: 160,
-    commentsCount: 1,
   },
   {
     id: 'b-3',
@@ -54,7 +55,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     cropVariety: 'Sharbati Premium',
     mandiName: 'Lasalgaon Mandi',
     gateNo: 'Gate 2',
-    dateString: 'Sep 15, 2026',
+    dateString: '15/09/2026',
     timeSlot: '02:00 PM – 03:30 PM',
     status: 'confirmed',
     statusLabel: 'Confirmed',
@@ -62,7 +63,6 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     progressLabel: 'Slot Confirmed',
     inspectorName: 'Inspector Shinde',
     quantityQuintals: 300,
-    commentsCount: 0,
   },
   {
     id: 'b-4',
@@ -71,7 +71,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     cropVariety: 'Long Staple BT',
     mandiName: 'Nagpur APMC Hub',
     gateNo: 'Gate 4',
-    dateString: 'Sep 02, 2026',
+    dateString: '02/09/2026',
     timeSlot: '09:00 AM – 11:00 AM',
     status: 'completed',
     statusLabel: 'Completed',
@@ -79,16 +79,33 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     progressLabel: 'Auction & Payout Settled',
     inspectorName: 'Officer Kale',
     quantityQuintals: 420,
-    commentsCount: 4,
+  },
+  {
+    id: 'b-5',
+    bookingCode: 'BK-5520',
+    cropName: 'Maize',
+    cropVariety: 'Yellow Hybrid',
+    mandiName: 'Ahmednagar Mandi',
+    gateNo: 'Gate 1',
+    dateString: '18/09/2026',
+    timeSlot: '11:30 AM – 01:00 PM',
+    status: 'confirmed',
+    statusLabel: 'Confirmed',
+    progressPercent: 15,
+    progressLabel: 'Gate Token Generated',
+    inspectorName: 'Officer Pawar',
+    quantityQuintals: 190,
   },
 ];
 
-const STATUS_FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'in_progress', label: 'In Progress' },
-  { id: 'confirmed', label: 'Confirmed' },
-  { id: 'completed', label: 'Completed' },
-];
+const INITIAL_BOOKING_CRITERIA: BookingsFilterCriteria = {
+  searchQuery: '',
+  selectedCrop: 'All Crops',
+  manualDate: '',
+  manualCrop: '',
+  minFarmers: '',
+  status: 'all',
+};
 
 const getStatusBadge = (status: BookingStatus) => {
   switch (status) {
@@ -100,8 +117,8 @@ const getStatusBadge = (status: BookingStatus) => {
       };
     case 'confirmed':
       return {
-        bg: '#D8F7D9',
-        text: '#1B5E20',
+        bg: '#DCFCE7',
+        text: '#15803D',
         label: 'Confirmed',
       };
     case 'completed':
@@ -121,110 +138,181 @@ const getStatusBadge = (status: BookingStatus) => {
 };
 
 export const BookingsSectionView = memo(function BookingsSectionView() {
-  const [viewMode, setViewMode] = useState<BookingViewMode>('table');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeStatus, setActiveStatus] = useState('all');
+  const [criteria, setCriteria] = useState<BookingsFilterCriteria>(INITIAL_BOOKING_CRITERIA);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filteredBookings = useMemo(() => {
     return STATIC_ALL_BOOKINGS.filter((b) => {
-      // Status filter
-      if (activeStatus !== 'all' && b.status !== activeStatus) {
-        return false;
-      }
-      // Search query
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
+      // 1. Search Query (ID, Crop, Mandi)
+      if (criteria.searchQuery.trim()) {
+        const query = criteria.searchQuery.toLowerCase();
         const matchesCode = b.bookingCode.toLowerCase().includes(query);
         const matchesCrop = b.cropName.toLowerCase().includes(query);
         const matchesMandi = b.mandiName.toLowerCase().includes(query);
         if (!matchesCode && !matchesCrop && !matchesMandi) return false;
       }
+
+      // 2. Status Filter
+      if (criteria.status !== 'all' && b.status !== criteria.status) {
+        return false;
+      }
+
+      // 3. Crop Filter
+      const targetCrop = criteria.manualCrop.trim() || (criteria.selectedCrop !== 'All Crops' ? criteria.selectedCrop : '');
+      if (targetCrop) {
+        if (!b.cropName.toLowerCase().includes(targetCrop.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 4. Date Filter
+      if (criteria.manualDate.trim()) {
+        if (!b.dateString.includes(criteria.manualDate.trim())) {
+          return false;
+        }
+      }
+
+      // 5. Quantity Filter
+      if (criteria.minFarmers.trim()) {
+        const min = parseInt(criteria.minFarmers, 10);
+        if (!isNaN(min) && b.quantityQuintals < min) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [searchQuery, activeStatus]);
+  }, [criteria]);
+
+  // Pagination calculation
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / ITEMS_PER_PAGE));
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredBookings.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredBookings, currentPage]);
 
   const handleShowQrPass = (booking: BookingItem) => {
     Alert.alert(
       'Mandi Gate Entry Pass',
-      `Booking #${booking.bookingCode}\nCrop: ${booking.cropName} (${booking.quantityQuintals} Qtl)\nSlot: ${booking.timeSlot}\nGate: ${booking.gateNo}\n\nPresent this pass to Mandi Security at gate entry.`,
+      `Booking #${booking.bookingCode}\nCrop: ${booking.cropName} (${booking.quantityQuintals} Qtl)\nSlot: ${booking.timeSlot}\nGate: ${booking.gateNo}\n\nPresent this pass at APMC Entry Toll.`,
       [{ text: 'Close' }]
     );
   };
+
+  const hasActiveFilters =
+    criteria.status !== 'all' ||
+    Boolean(criteria.manualCrop) ||
+    criteria.selectedCrop !== 'All Crops' ||
+    Boolean(criteria.manualDate) ||
+    Boolean(criteria.minFarmers);
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}>
       
-      {/* Search Bar & Mode Toggle Section */}
+      {/* Search Bar & Filter Trigger */}
       <View style={styles.topControlSection}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={17} color={ThemeColors.textSecondary} />
           <TextInput
             placeholder="Search booking ID, crop, mandi..."
             placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={criteria.searchQuery}
+            onChangeText={(text) => {
+              setCriteria((prev) => ({ ...prev, searchQuery: text }));
+              setCurrentPage(1);
+            }}
             style={styles.searchInput}
           />
-          {searchQuery ? (
+          {criteria.searchQuery ? (
             <Pressable
-              onPress={() => setSearchQuery('')}
+              onPress={() => {
+                setCriteria((prev) => ({ ...prev, searchQuery: '' }));
+                setCurrentPage(1);
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="close-circle" size={16} color="#9CA3AF" />
             </Pressable>
           ) : null}
         </View>
 
-        {/* View Mode Toggle: Table / Cards */}
-        <View style={styles.modeTogglePill}>
-          <Pressable
-            onPress={() => setViewMode('table')}
-            style={[
-              styles.modeBtn,
-              viewMode === 'table' && styles.modeBtnActive,
-            ]}>
-            <Ionicons
-              name="list"
-              size={17}
-              color={viewMode === 'table' ? '#FFFFFF' : ThemeColors.textSecondary}
-            />
-          </Pressable>
-
-          <Pressable
-            onPress={() => setViewMode('cards')}
-            style={[
-              styles.modeBtn,
-              viewMode === 'cards' && styles.modeBtnActive,
-            ]}>
-            <Ionicons
-              name="grid"
-              size={16}
-              color={viewMode === 'cards' ? '#FFFFFF' : ThemeColors.textSecondary}
-            />
-          </Pressable>
-        </View>
+        {/* Filter Modal Button */}
+        <Pressable
+          onPress={() => setFilterModalVisible(true)}
+          style={[
+            styles.filterBtn,
+            hasActiveFilters && styles.filterBtnActive,
+          ]}>
+          <Ionicons
+            name="options-outline"
+            size={20}
+            color={hasActiveFilters ? '#FFFFFF' : '#16A34A'}
+          />
+        </Pressable>
       </View>
 
-      {/* Filter Status Pills */}
-      <View style={styles.statusFilterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusFilterContent}>
-          {STATUS_FILTERS.map((f) => {
-            const active = activeStatus === f.id;
+      {/* Active Filter Chips */}
+      {hasActiveFilters ? (
+        <View style={styles.activeFiltersRow}>
+          <Text style={styles.activeFiltersLabel}>Filters:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
+            {criteria.manualCrop || criteria.selectedCrop !== 'All Crops' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>🌾 {criteria.manualCrop || criteria.selectedCrop}</Text>
+              </View>
+            ) : null}
+            {criteria.manualDate ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>📅 {criteria.manualDate}</Text>
+              </View>
+            ) : null}
+            {criteria.minFarmers ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>📦 {criteria.minFarmers}+ Qtl</Text>
+              </View>
+            ) : null}
+            {criteria.status !== 'all' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>🏷️ {criteria.status}</Text>
+              </View>
+            ) : null}
+            <Pressable
+              onPress={() => {
+                setCriteria(INITIAL_BOOKING_CRITERIA);
+                setCurrentPage(1);
+              }}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+              <Text style={styles.clearAllText}>Clear</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      ) : null}
+
+      {/* Status Quick Filter Chips */}
+      <View style={styles.statusPillsRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusPillsContent}>
+          {['all', 'in_progress', 'confirmed', 'completed'].map((st) => {
+            const active = criteria.status === st;
+            const label = st === 'all' ? 'All Slots' : st === 'in_progress' ? 'In Progress' : st === 'confirmed' ? 'Confirmed' : 'Completed';
             return (
               <Pressable
-                key={f.id}
-                onPress={() => setActiveStatus(f.id)}
+                key={st}
+                onPress={() => {
+                  setCriteria((prev) => ({ ...prev, status: st }));
+                  setCurrentPage(1);
+                }}
                 style={[
-                  styles.filterPill,
-                  active ? styles.filterPillActive : styles.filterPillInactive,
+                  styles.statusChip,
+                  active ? styles.statusChipActive : styles.statusChipInactive,
                 ]}>
                 <Text
                   style={[
-                    styles.filterPillText,
-                    active ? styles.filterPillTextActive : styles.filterPillTextInactive,
+                    styles.statusChipText,
+                    active ? styles.statusChipTextActive : styles.statusChipTextInactive,
                   ]}>
-                  {f.label}
+                  {label}
                 </Text>
               </Pressable>
             );
@@ -232,135 +320,122 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
         </ScrollView>
       </View>
 
-      {/* Content based on View Mode */}
-      <View style={styles.contentSection}>
-        {filteredBookings.length === 0 ? (
+      {/* Cards List (By Default - No Table Toggle) */}
+      <View style={styles.cardsList}>
+        {paginatedBookings.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="calendar-outline" size={32} color="#9CA3AF" />
             <Text style={styles.emptyTitle}>No bookings found</Text>
-            <Text style={styles.emptySubtitle}>Try changing your search term or status filter.</Text>
-          </View>
-        ) : viewMode === 'table' ? (
-          /* Compact Table View */
-          <View style={styles.tableCard}>
-            {/* Table Header */}
-            <View style={styles.tableHeaderRow}>
-              <Text style={[styles.headerCell, { flex: 2.2 }]}>Crop / Slot</Text>
-              <Text style={[styles.headerCell, { flex: 1.8 }]}>Mandi</Text>
-              <Text style={[styles.headerCell, { flex: 1.5 }]}>Date / Qty</Text>
-              <Text style={[styles.headerCell, { flex: 1.5, textAlign: 'right' }]}>Status / Pass</Text>
-            </View>
-
-            {/* Table Rows */}
-            {filteredBookings.map((b, index) => {
-              const statusStyle = getStatusBadge(b.status);
-              const isLast = index === filteredBookings.length - 1;
-
-              return (
-                <Pressable
-                  key={b.id}
-                  onPress={() => handleShowQrPass(b)}
-                  style={({ pressed }) => [
-                    styles.tableRow,
-                    !isLast && styles.rowBorder,
-                    pressed && styles.rowPressed,
-                  ]}>
-                  {/* Crop & Booking Code */}
-                  <View style={{ flex: 2.2 }}>
-                    <Text numberOfLines={1} style={styles.cropText}>
-                      {b.cropName}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.codeText}>
-                      #{b.bookingCode}
-                    </Text>
-                  </View>
-
-                  {/* Mandi Name & Gate */}
-                  <View style={{ flex: 1.8, paddingRight: 4 }}>
-                    <Text numberOfLines={1} style={styles.mandiText}>
-                      {b.mandiName.replace(' APMC', '').replace(' Market', '')}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.subMandiText}>
-                      {b.gateNo.split('(')[0]}
-                    </Text>
-                  </View>
-
-                  {/* Date & Quantity */}
-                  <View style={{ flex: 1.5 }}>
-                    <Text numberOfLines={1} style={styles.qtyText}>
-                      {b.quantityQuintals} Qtl
-                    </Text>
-                    <Text numberOfLines={1} style={styles.dateText}>
-                      {b.dateString}
-                    </Text>
-                  </View>
-
-                  {/* Status Pill & Pass Trigger */}
-                  <View style={{ flex: 1.5, alignItems: 'flex-end', gap: 3 }}>
-                    <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-                      <Text numberOfLines={1} style={[styles.statusText, { color: statusStyle.text }]}>
-                        {statusStyle.label}
-                      </Text>
-                    </View>
-                    <Text style={styles.viewPassLink}>Pass →</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+            <Text style={styles.emptySubtitle}>Try changing your search term or filters.</Text>
+            <Pressable
+              onPress={() => {
+                setCriteria(INITIAL_BOOKING_CRITERIA);
+                setCurrentPage(1);
+              }}
+              style={styles.resetBtn}>
+              <Text style={styles.resetBtnText}>Reset Filters</Text>
+            </Pressable>
           </View>
         ) : (
-          /* Cards View (No loader/progress bars, small height) */
-          <View style={styles.cardsList}>
-            {filteredBookings.map((b) => {
-              const statusStyle = getStatusBadge(b.status);
-              return (
-                <View key={b.id} style={styles.card}>
-                  <View style={styles.cardTopRow}>
-                    <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-                      <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                        {statusStyle.label}
-                      </Text>
-                    </View>
-                    <Text style={styles.cardCode}>#{b.bookingCode}</Text>
+          paginatedBookings.map((b) => {
+            const statusStyle = getStatusBadge(b.status);
+            return (
+              <View key={b.id} style={styles.card}>
+                <View style={styles.cardTopRow}>
+                  <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                      {statusStyle.label}
+                    </Text>
                   </View>
+                  <Text style={styles.cardCode}>#{b.bookingCode}</Text>
+                </View>
 
-                  <Text style={styles.cardCropTitle}>
-                    {b.cropName} ({b.cropVariety})
-                  </Text>
-                  <Text style={styles.cardMandiSubtitle}>
-                    {b.mandiName} • {b.gateNo}
-                  </Text>
+                <Text style={styles.cardCropTitle}>
+                  {b.cropName} ({b.cropVariety})
+                </Text>
+                <Text style={styles.cardMandiSubtitle}>
+                  {b.mandiName} • {b.gateNo}
+                </Text>
 
-                  <View style={styles.cardInfoRow}>
-                    <View style={styles.infoCol}>
-                      <Ionicons name="calendar-outline" size={13} color={ThemeColors.textSecondary} />
-                      <Text style={styles.infoColText}>{b.dateString}</Text>
-                    </View>
-                    <View style={styles.infoCol}>
-                      <Ionicons name="time-outline" size={13} color={ThemeColors.textSecondary} />
-                      <Text style={styles.infoColText}>{b.timeSlot}</Text>
-                    </View>
-                    <View style={styles.infoCol}>
-                      <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
-                      <Text style={styles.infoColText}>{b.quantityQuintals} Qtl</Text>
-                    </View>
+                <View style={styles.cardInfoRow}>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="calendar-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoColText}>{b.dateString}</Text>
                   </View>
-
-                  <View style={styles.cardFooterRow}>
-                    <Text style={styles.inspectorText}>Inspector: {b.inspectorName}</Text>
-                    <Pressable
-                      onPress={() => handleShowQrPass(b)}
-                      style={({ pressed }) => [styles.passBtn, pressed && styles.pressed]}>
-                      <Ionicons name="qr-code-outline" size={14} color="#FFFFFF" />
-                      <Text style={styles.passBtnText}>QR Pass</Text>
-                    </Pressable>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="time-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoColText}>{b.timeSlot}</Text>
+                  </View>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoColText}>{b.quantityQuintals} Qtl</Text>
                   </View>
                 </View>
-              );
-            })}
-          </View>
+
+                <View style={styles.cardFooterRow}>
+                  <Text style={styles.inspectorText}>Inspector: {b.inspectorName}</Text>
+                  <Pressable
+                    onPress={() => handleShowQrPass(b)}
+                    style={({ pressed }) => [styles.passBtn, pressed && styles.pressed]}>
+                    <Ionicons name="qr-code-outline" size={14} color="#FFFFFF" />
+                    <Text style={styles.passBtnText}>QR Pass</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })
         )}
       </View>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 ? (
+        <View style={styles.paginationRow}>
+          <Pressable
+            disabled={currentPage <= 1}
+            onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            style={[styles.pageBtn, currentPage <= 1 && styles.pageBtnDisabled]}>
+            <Ionicons
+              name="chevron-back"
+              size={16}
+              color={currentPage <= 1 ? '#9CA3AF' : ThemeColors.textPrimary}
+            />
+            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>Prev</Text>
+          </Pressable>
+
+          <View style={styles.pageIndicatorPill}>
+            <Text style={styles.pageIndicatorText}>
+              Page {currentPage} of {totalPages}
+            </Text>
+          </View>
+
+          <Pressable
+            disabled={currentPage >= totalPages}
+            onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            style={[styles.pageBtn, currentPage >= totalPages && styles.pageBtnDisabled]}>
+            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>Next</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={currentPage >= totalPages ? '#9CA3AF' : ThemeColors.textPrimary}
+            />
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* Bookings Multi-Criteria Filter Modal */}
+      <BookingsFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        criteria={criteria}
+        onApply={(newCriteria) => {
+          setCriteria(newCriteria);
+          setCurrentPage(1);
+        }}
+        onReset={() => {
+          setCriteria(INITIAL_BOOKING_CRITERIA);
+          setCurrentPage(1);
+        }}
+      />
     </ScrollView>
   );
 });
@@ -374,7 +449,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     marginTop: 4,
-    gap: 10,
+    gap: 8,
   },
   searchBar: {
     flex: 1,
@@ -393,141 +468,86 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ThemeColors.textPrimary,
   },
-  modeTogglePill: {
-    flexDirection: 'row',
-    backgroundColor: ThemeColors.white,
+  filterBtn: {
+    width: 46,
+    height: 46,
     borderRadius: 18,
-    padding: 3,
+    backgroundColor: ThemeColors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#EFEFEF',
   },
-  modeBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 15,
+  filterBtnActive: {
+    backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
+  },
+  activeFiltersRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 8,
+    gap: 6,
   },
-  modeBtnActive: {
-    backgroundColor: ThemeColors.darkNav,
+  activeFiltersLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ThemeColors.textMuted,
   },
-  statusFilterRow: {
+  filterChipScroll: {
+    gap: 6,
+    alignItems: 'center',
+  },
+  activePill: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  activePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  clearAllText: {
+    fontSize: 11,
+    color: '#DC2626',
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  statusPillsRow: {
     marginTop: 10,
   },
-  statusFilterContent: {
+  statusPillsContent: {
     paddingHorizontal: 20,
     gap: 8,
   },
-  filterPill: {
+  statusChip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 14,
   },
-  filterPillActive: {
-    backgroundColor: ThemeColors.darkNav,
+  statusChipActive: {
+    backgroundColor: '#16A34A',
   },
-  filterPillInactive: {
+  statusChipInactive: {
     backgroundColor: ThemeColors.white,
     borderWidth: 1,
     borderColor: '#EFEFEF',
   },
-  filterPillText: {
+  statusChipText: {
     fontSize: 12,
     fontWeight: '700',
   },
-  filterPillTextActive: {
+  statusChipTextActive: {
     color: '#FFFFFF',
   },
-  filterPillTextInactive: {
+  statusChipTextInactive: {
     color: ThemeColors.textSecondary,
-  },
-  contentSection: {
-    paddingHorizontal: 20,
-    marginTop: 12,
-  },
-  tableCard: {
-    backgroundColor: ThemeColors.white,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
-    overflow: 'hidden',
-  },
-  tableHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  headerCell: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: ThemeColors.textMuted,
-    textTransform: 'uppercase',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  rowPressed: {
-    backgroundColor: '#F9FAFB',
-  },
-  cropText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ThemeColors.textPrimary,
-  },
-  codeText: {
-    fontSize: 11,
-    color: ThemeColors.textMuted,
-    fontWeight: '500',
-  },
-  mandiText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: ThemeColors.textPrimary,
-  },
-  subMandiText: {
-    fontSize: 10,
-    color: ThemeColors.textSecondary,
-  },
-  qtyText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: ThemeColors.textPrimary,
-  },
-  dateText: {
-    fontSize: 10,
-    color: ThemeColors.textSecondary,
-  },
-  statusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  viewPassLink: {
-    fontSize: 10,
-    color: ThemeColors.lavenderDark,
-    fontWeight: '700',
   },
   cardsList: {
+    paddingHorizontal: 20,
+    marginTop: 12,
     gap: 12,
   },
   card: {
@@ -548,6 +568,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   cardCode: {
     fontSize: 12,
     fontWeight: '700',
@@ -559,7 +588,7 @@ const styles = StyleSheet.create({
     color: ThemeColors.textPrimary,
   },
   cardMandiSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: ThemeColors.textSecondary,
     marginBottom: 10,
     marginTop: 2,
@@ -595,7 +624,7 @@ const styles = StyleSheet.create({
   passBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: ThemeColors.darkNav,
+    backgroundColor: '#16A34A',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
@@ -605,6 +634,46 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  pageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ThemeColors.white,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  pageBtnDisabled: {
+    opacity: 0.45,
+  },
+  pageBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ThemeColors.textPrimary,
+  },
+  pageTextDisabled: {
+    color: '#9CA3AF',
+  },
+  pageIndicatorPill: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pageIndicatorText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803D',
   },
   emptyCard: {
     backgroundColor: ThemeColors.white,
@@ -626,6 +695,18 @@ const styles = StyleSheet.create({
     color: ThemeColors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
+    marginBottom: 14,
+  },
+  resetBtn: {
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  resetBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   pressed: {
     opacity: 0.8,
