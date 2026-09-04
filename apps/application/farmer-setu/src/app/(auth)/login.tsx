@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   verifyNowButton: {
     marginTop: 8,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#16A34A',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#16A34A',
     marginTop: 2,
   },
   footerRow: {
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   signUpText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#8B5CF6',
+    color: '#16A34A',
   },
 
 });
