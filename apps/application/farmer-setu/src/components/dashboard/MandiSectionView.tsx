@@ -1,16 +1,18 @@
-import React, { memo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
+import React, { memo, useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  TextInput,
+  Alert,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
-import { FilterPillBar } from './FilterPillBar';
-import type { MandiItem } from '@/interfaces';
-
-const MANDI_FILTER_OPTIONS = [
-  { id: 'all', label: 'All Mandis' },
-  { id: 'nearby', label: 'Nearby (< 25 km)' },
-  { id: 'top_rates', label: 'Top Modal Rates' },
-  { id: 'low_wait', label: 'Shortest Queue' },
-];
+import { MandiFilterModal } from './MandiFilterModal';
+import { MandiMapViewModal } from './MandiMapViewModal';
+import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
 const STATIC_MANDIS: MandiItem[] = [
   {
@@ -30,7 +32,7 @@ const STATIC_MANDIS: MandiItem[] = [
     name: 'Lasalgaon APMC Market',
     district: 'Lasalgaon, Maharashtra',
     distanceKm: 28.1,
-    topCrop: 'Onion (Garva)',
+    topCrop: 'Onion (Garva) & Wheat',
     modalPrice: '₹2,850 / qtl',
     priceTrend: '+₹190 today',
     trendDirection: 'up',
@@ -61,101 +63,265 @@ const STATIC_MANDIS: MandiItem[] = [
     estimatedQueueTime: '30 mins wait',
     isOpen: true,
   },
+  {
+    id: 'mandi-5',
+    name: 'Ahmednagar Grain Mandi',
+    district: 'Ahmednagar, Maharashtra',
+    distanceKm: 55.0,
+    topCrop: 'Maize & Wheat',
+    modalPrice: '₹2,340 / qtl',
+    priceTrend: '+₹60 today',
+    trendDirection: 'up',
+    estimatedQueueTime: '20 mins wait',
+    isOpen: true,
+  },
 ];
 
-export const MandiSectionView = memo(function MandiSectionView() {
-  const [activeFilter, setActiveFilter] = useState('all');
+const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
+  searchQuery: '',
+  selectedCrop: 'All Crops',
+  selectedLocation: 'All Locations',
+  selectedDate: 'Today',
+  timeSlot: 'Any Time',
+};
 
-  const handleBookSlot = (mandiName: string) => {
+export const MandiSectionView = memo(function MandiSectionView() {
+  const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+
+  const filteredMandis = useMemo(() => {
+    return STATIC_MANDIS.filter((mandi) => {
+      // 1. Text Search query (Name, crop, district)
+      if (criteria.searchQuery.trim()) {
+        const query = criteria.searchQuery.toLowerCase();
+        const matchesName = mandi.name.toLowerCase().includes(query);
+        const matchesCrop = mandi.topCrop.toLowerCase().includes(query);
+        const matchesDistrict = mandi.district.toLowerCase().includes(query);
+        if (!matchesName && !matchesCrop && !matchesDistrict) return false;
+      }
+
+      // 2. Crop filter
+      if (criteria.selectedCrop && criteria.selectedCrop !== 'All Crops') {
+        if (!mandi.topCrop.toLowerCase().includes(criteria.selectedCrop.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 3. Location filter
+      if (criteria.selectedLocation && criteria.selectedLocation !== 'All Locations') {
+        if (!mandi.district.toLowerCase().includes(criteria.selectedLocation.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [criteria]);
+
+  const handleBookSlot = (mandi: MandiItem) => {
     Alert.alert(
-      'Slot Booking',
-      `Ready to book gate entry pass for ${mandiName}. Select crop & vehicle in next step.`,
-      [{ text: 'OK' }]
+      'Book Mandi Gate Slot',
+      `Booking slot at ${mandi.name} for ${criteria.selectedDate} (${criteria.timeSlot}).`,
+      [{ text: 'Proceed to Vehicle Details' }]
     );
   };
+
+  const hasActiveFilters =
+    criteria.selectedCrop !== 'All Crops' ||
+    criteria.selectedLocation !== 'All Locations' ||
+    criteria.selectedDate !== 'Today' ||
+    criteria.timeSlot !== 'Any Time';
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}>
       
-      {/* Search & Filter pills */}
-      <FilterPillBar
-        options={MANDI_FILTER_OPTIONS}
-        activeFilter={activeFilter}
-        onSelectFilter={setActiveFilter}
-      />
+      {/* Search Bar & Map Trigger */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={ThemeColors.textSecondary} />
+          <TextInput
+            placeholder="Search mandi, crop, location..."
+            placeholderTextColor="#9CA3AF"
+            value={criteria.searchQuery}
+            onChangeText={(text) =>
+              setCriteria((prev) => ({ ...prev, searchQuery: text }))
+            }
+            style={styles.searchInput}
+          />
+          {criteria.searchQuery ? (
+            <Pressable
+              onPress={() => setCriteria((prev) => ({ ...prev, searchQuery: '' }))}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Filter Button */}
+        <Pressable
+          onPress={() => setFilterModalVisible(true)}
+          style={[
+            styles.iconActionBtn,
+            hasActiveFilters && styles.filterBtnActive,
+          ]}>
+          <Ionicons
+            name="options-outline"
+            size={20}
+            color={hasActiveFilters ? '#FFFFFF' : ThemeColors.darkNav}
+          />
+        </Pressable>
+
+        {/* Map Radar Button */}
+        <Pressable
+          onPress={() => setMapModalVisible(true)}
+          style={[styles.iconActionBtn, styles.mapBtn]}>
+          <Ionicons name="map" size={19} color="#FFFFFF" />
+        </Pressable>
+      </View>
+
+      {/* Active Filter Chips bar if any filter selected */}
+      {hasActiveFilters ? (
+        <View style={styles.activeFiltersRow}>
+          <Text style={styles.activeFiltersLabel}>Filters:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
+            {criteria.selectedCrop !== 'All Crops' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>{criteria.selectedCrop}</Text>
+              </View>
+            ) : null}
+            {criteria.selectedLocation !== 'All Locations' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>{criteria.selectedLocation}</Text>
+              </View>
+            ) : null}
+            {criteria.selectedDate !== 'Today' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>{criteria.selectedDate}</Text>
+              </View>
+            ) : null}
+            {criteria.timeSlot !== 'Any Time' ? (
+              <View style={styles.activePill}>
+                <Text style={styles.activePillText}>{criteria.timeSlot}</Text>
+              </View>
+            ) : null}
+            <Pressable
+              onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      ) : null}
+
+      {/* Quick Location Hint */}
+      <View style={styles.locationHintRow}>
+        <Ionicons name="navigate-circle" size={15} color={ThemeColors.lavenderDark} />
+        <Text style={styles.locationHintText}>Showing verified APMC mandis near Niphad (Nashik)</Text>
+      </View>
 
       {/* Mandis List */}
       <View style={styles.list}>
-        {STATIC_MANDIS.map((mandi) => (
-          <View key={mandi.id} style={styles.card}>
-            {/* Top row: Status & Distance */}
-            <View style={styles.cardHeader}>
-              <View style={styles.statusPill}>
-                <View style={styles.greenDot} />
-                <Text style={styles.statusText}>Open for e-Auction</Text>
-              </View>
-              <View style={styles.distancePill}>
-                <Ionicons name="location-outline" size={13} color={ThemeColors.textSecondary} />
-                <Text style={styles.distanceText}>{mandi.distanceKm} km</Text>
-              </View>
-            </View>
-
-            {/* Mandi Name & District */}
-            <Text style={styles.mandiName}>{mandi.name}</Text>
-            <Text style={styles.districtText}>{mandi.district}</Text>
-
-            {/* Price & Crop stats card */}
-            <View style={styles.ratesBox}>
-              <View>
-                <Text style={styles.ratesLabel}>Today's Modal Rate</Text>
-                <Text style={styles.priceValue}>{mandi.modalPrice}</Text>
-                <Text style={styles.cropName}>{mandi.topCrop}</Text>
-              </View>
-
-              <View style={styles.trendCol}>
-                <View
-                  style={[
-                    styles.trendBadge,
-                    mandi.trendDirection === 'up' ? styles.trendBadgeUp : styles.trendBadgeDown,
-                  ]}>
-                  <Text
-                    style={[
-                      styles.trendBadgeText,
-                      mandi.trendDirection === 'up' ? styles.trendTextUp : styles.trendTextDown,
-                    ]}>
-                    {mandi.trendDirection === 'up' ? '↑ ' : '↓ '}
-                    {mandi.priceTrend}
-                  </Text>
-                </View>
-                <Text style={styles.queueText}>⏱ {mandi.estimatedQueueTime}</Text>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionsRow}>
-              <Pressable
-                onPress={() => handleBookSlot(mandi.name)}
-                style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
-                <Text style={styles.primaryBtnText}>Book Slot</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  Alert.alert(
-                    'Live APMC Rates',
-                    `Viewing real-time arrival auctions for ${mandi.name}`,
-                    [{ text: 'OK' }]
-                  );
-                }}
-                style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}>
-                <Text style={styles.secondaryBtnText}>Live Rates</Text>
-              </Pressable>
-            </View>
+        {filteredMandis.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="search-outline" size={32} color="#9CA3AF" />
+            <Text style={styles.emptyTitle}>No matching mandis found</Text>
+            <Text style={styles.emptySubtitle}>Try changing your crop or location filters.</Text>
+            <Pressable
+              onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+              style={styles.resetSearchBtn}>
+              <Text style={styles.resetSearchText}>Reset All Filters</Text>
+            </Pressable>
           </View>
-        ))}
+        ) : (
+          filteredMandis.map((mandi) => (
+            <View key={mandi.id} style={styles.card}>
+              {/* Top row: Status & Distance */}
+              <View style={styles.cardHeader}>
+                <View style={styles.statusPill}>
+                  <View style={styles.greenDot} />
+                  <Text style={styles.statusText}>Open for e-Auction</Text>
+                </View>
+                <View style={styles.distancePill}>
+                  <Ionicons name="location-outline" size={13} color={ThemeColors.textSecondary} />
+                  <Text style={styles.distanceText}>{mandi.distanceKm} km</Text>
+                </View>
+              </View>
+
+              {/* Mandi Name & District */}
+              <Text style={styles.mandiName}>{mandi.name}</Text>
+              <Text style={styles.districtText}>{mandi.district}</Text>
+
+              {/* Price & Crop stats box */}
+              <View style={styles.ratesBox}>
+                <View>
+                  <Text style={styles.ratesLabel}>Today's Modal Rate</Text>
+                  <Text style={styles.priceValue}>{mandi.modalPrice}</Text>
+                  <Text style={styles.cropName}>{mandi.topCrop}</Text>
+                </View>
+
+                <View style={styles.trendCol}>
+                  <View
+                    style={[
+                      styles.trendBadge,
+                      mandi.trendDirection === 'up' ? styles.trendBadgeUp : styles.trendBadgeDown,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.trendBadgeText,
+                        mandi.trendDirection === 'up' ? styles.trendTextUp : styles.trendTextDown,
+                      ]}>
+                      {mandi.trendDirection === 'up' ? '↑ ' : '↓ '}
+                      {mandi.priceTrend}
+                    </Text>
+                  </View>
+                  <Text style={styles.queueText}>⏱ {mandi.estimatedQueueTime}</Text>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.actionsRow}>
+                <Pressable
+                  onPress={() => handleBookSlot(mandi)}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
+                  <Text style={styles.primaryBtnText}>Book Slot</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    Alert.alert(
+                      'Live APMC Rates',
+                      `Viewing real-time arrival auctions for ${mandi.name}`,
+                      [{ text: 'OK' }]
+                    );
+                  }}
+                  style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}>
+                  <Text style={styles.secondaryBtnText}>Live Rates</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))
+        )}
       </View>
+
+      {/* Multi-Criteria Filter Modal */}
+      <MandiFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        criteria={criteria}
+        onApply={(newCriteria) => setCriteria(newCriteria)}
+        onReset={() => setCriteria(INITIAL_FILTER_CRITERIA)}
+      />
+
+      {/* Interactive Map Radar Modal */}
+      <MandiMapViewModal
+        visible={mapModalVisible}
+        onClose={() => setMapModalVisible(false)}
+        mandis={STATIC_MANDIS}
+        onSelectMandi={(mandi) => handleBookSlot(mandi)}
+      />
     </ScrollView>
   );
 });
@@ -163,6 +329,93 @@ export const MandiSectionView = memo(function MandiSectionView() {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 110,
+  },
+  searchSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 4,
+    gap: 8,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ThemeColors.white,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: ThemeColors.textPrimary,
+  },
+  iconActionBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 18,
+    backgroundColor: ThemeColors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  filterBtnActive: {
+    backgroundColor: ThemeColors.darkNav,
+    borderColor: ThemeColors.darkNav,
+  },
+  mapBtn: {
+    backgroundColor: ThemeColors.lavenderDark,
+    borderColor: ThemeColors.lavenderDark,
+  },
+  activeFiltersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 10,
+    gap: 8,
+  },
+  activeFiltersLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ThemeColors.textMuted,
+  },
+  filterChipScroll: {
+    gap: 6,
+    alignItems: 'center',
+  },
+  activePill: {
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  activePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ThemeColors.lavenderDark,
+  },
+  clearAllText: {
+    fontSize: 11,
+    color: '#DC2626',
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  locationHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 10,
+    gap: 6,
+  },
+  locationHintText: {
+    fontSize: 12,
+    color: ThemeColors.textSecondary,
+    fontWeight: '500',
   },
   list: {
     paddingHorizontal: 20,
@@ -172,7 +425,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: ThemeColors.white,
     borderRadius: 24,
-    padding: 20,
+    padding: 18,
     borderWidth: 1,
     borderColor: '#EFEFEF',
     shadowColor: '#000',
@@ -185,16 +438,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ECFDF5',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    gap: 5,
   },
   greenDot: {
     width: 6,
@@ -218,34 +471,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   mandiName: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
     color: ThemeColors.textPrimary,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   districtText: {
-    fontSize: 13,
+    fontSize: 12,
     color: ThemeColors.textSecondary,
-    marginBottom: 14,
+    marginBottom: 12,
     marginTop: 2,
   },
   ratesBox: {
     backgroundColor: '#F9FAFB',
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 16,
+    padding: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   ratesLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: ThemeColors.textMuted,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
   },
   priceValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: ThemeColors.textPrimary,
     marginVertical: 2,
@@ -257,12 +510,12 @@ const styles = StyleSheet.create({
   },
   trendCol: {
     alignItems: 'flex-end',
-    gap: 6,
+    gap: 4,
   },
   trendBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   trendBadgeUp: {
     backgroundColor: '#D1FAE5',
@@ -292,27 +545,60 @@ const styles = StyleSheet.create({
   primaryBtn: {
     flex: 1,
     backgroundColor: ThemeColors.darkNav,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingVertical: 11,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryBtnText: {
     color: ThemeColors.white,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   secondaryBtn: {
     flex: 1,
     backgroundColor: '#F3F4F6',
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingVertical: 11,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryBtnText: {
     color: ThemeColors.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  emptyCard: {
+    backgroundColor: ThemeColors.white,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: ThemeColors.textPrimary,
+    marginTop: 10,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: ThemeColors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  resetSearchBtn: {
+    backgroundColor: ThemeColors.darkNav,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  resetSearchText: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '700',
   },
   pressed: {

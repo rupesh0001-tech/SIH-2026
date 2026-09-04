@@ -6,5 +6,7 @@ export * from './SuggestionCard';
 export * from './RecentBookingsList';
 export * from './DashboardMainView';
 export * from './MandiSectionView';
+export * from './MandiMapViewModal';
+export * from './MandiFilterModal';
 export * from './BookingsSectionView';
 export * from './SettingsSectionView';

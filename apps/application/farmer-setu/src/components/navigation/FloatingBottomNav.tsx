@@ -96,13 +96,16 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    shadowColor: '#000000',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#1A1538',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.22,
     shadowRadius: 18,
     elevation: 8,
     gap: 12,
   },
+
   navItem: {
     width: 44,
     height: 44,

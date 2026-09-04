@@ -57,7 +57,21 @@ export interface MandiItem {
   trendDirection: 'up' | 'down';
   estimatedQueueTime: string;
   isOpen: boolean;
+  latitude?: number;
+  longitude?: number;
+  todayArrivalsQtl?: number;
+  operatingHours?: string;
 }
+
+export interface MandiFilterCriteria {
+  searchQuery: string;
+  selectedCrop: string;
+  selectedLocation: string;
+  selectedDate: string;
+  timeSlot: string;
+}
+
+export type BookingViewMode = 'table' | 'cards';
 
 export interface DayPickerItem {
   dayName: string;
@@ -65,3 +79,4 @@ export interface DayPickerItem {
   dateKey: string;
   isToday?: boolean;
 }
+

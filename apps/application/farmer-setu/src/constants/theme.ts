@@ -18,9 +18,10 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Dark navigation & accents
-  darkNav: '#1E2022',
+  // Refined palette-matching navigation & accents (No plain black)
+  darkNav: '#2C274C',
   darkNavActive: '#FFFFFF',
+
 
   // Text
   textPrimary: '#111827',

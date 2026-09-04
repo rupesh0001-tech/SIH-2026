@@ -10,32 +10,32 @@ interface RecentBookingsListProps {
   onViewAllPress?: () => void;
 }
 
-const getStatusStyles = (status: BookingStatus) => {
+const getStatusBadge = (status: BookingStatus) => {
   switch (status) {
     case 'in_progress':
       return {
         bg: '#FFE8C6',
         text: '#8D4004',
-        barColor: '#F97316',
+        label: 'In Progress',
       };
     case 'confirmed':
       return {
         bg: '#D8F7D9',
         text: '#1B5E20',
-        barColor: '#16A34A',
+        label: 'Confirmed',
       };
     case 'completed':
       return {
         bg: '#EAECEE',
         text: '#374151',
-        barColor: '#4B5563',
+        label: 'Done',
       };
     case 'cancelled':
     default:
       return {
         bg: '#FEE2E2',
         text: '#991B1B',
-        barColor: '#EF4444',
+        label: 'Cancelled',
       };
   }
 };
@@ -60,72 +60,68 @@ export const RecentBookingsList = memo(function RecentBookingsList({
         ) : null}
       </View>
 
-      <View style={styles.list}>
-        {bookings.map((booking) => {
-          const statusStyle = getStatusStyles(booking.status);
+      {/* Compact Table View */}
+      <View style={styles.tableCard}>
+        {/* Table Header */}
+        <View style={styles.tableHeaderRow}>
+          <Text style={[styles.headerCell, { flex: 2.2 }]}>Crop & Slot</Text>
+          <Text style={[styles.headerCell, { flex: 1.8 }]}>Mandi</Text>
+          <Text style={[styles.headerCell, { flex: 1.4 }]}>Qty / Date</Text>
+          <Text style={[styles.headerCell, { flex: 1.4, textAlign: 'right' }]}>Status</Text>
+        </View>
+
+        {/* Table Rows */}
+        {bookings.map((booking, index) => {
+          const statusStyle = getStatusBadge(booking.status);
+          const isLast = index === bookings.length - 1;
 
           return (
             <Pressable
               key={booking.id}
               onPress={() => onBookingPress?.(booking.id)}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-              
-              {/* Status Pill Badge */}
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
-                  {booking.statusLabel}
+              style={({ pressed }) => [
+                styles.tableRow,
+                !isLast && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}>
+              {/* Crop & Booking Code */}
+              <View style={{ flex: 2.2 }}>
+                <Text numberOfLines={1} style={styles.cropText}>
+                  {booking.cropName}
+                </Text>
+                <Text numberOfLines={1} style={styles.codeText}>
+                  #{booking.bookingCode}
                 </Text>
               </View>
 
-              {/* Crop & Booking Title */}
-              <Text style={styles.cropTitle}>
-                {booking.cropName} ({booking.cropVariety})
-              </Text>
-              <Text style={styles.mandiSubtitle}>
-                {booking.mandiName} • {booking.gateNo}
-              </Text>
-
-              {/* Info Row: Date, Quantity, Comments */}
-              <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <Ionicons name="calendar-outline" size={14} color={ThemeColors.textSecondary} />
-                  <Text style={styles.infoText}>{booking.dateString}</Text>
-                </View>
-
-                <View style={styles.infoItem}>
-                  <Ionicons name="chatbox-outline" size={14} color={ThemeColors.textSecondary} />
-                  <Text style={styles.infoText}>{booking.commentsCount ?? 2} updates</Text>
-                </View>
+              {/* Mandi Name */}
+              <View style={{ flex: 1.8, paddingRight: 4 }}>
+                <Text numberOfLines={1} style={styles.mandiText}>
+                  {booking.mandiName.replace(' APMC', '').replace(' Market', '')}
+                </Text>
+                <Text numberOfLines={1} style={styles.subMandiText}>
+                  {booking.gateNo}
+                </Text>
               </View>
 
-              {/* Two-part Progress Bar matching Reference Design */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBarTrack}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${Math.max(booking.progressPercent, 12)}%`,
-                        backgroundColor: statusStyle.barColor,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.progressLabelRow}>
-                  <Text style={styles.progressLabelText}>{booking.progressLabel}</Text>
-                  <Text style={styles.quantityText}>{booking.quantityQuintals} Qtl</Text>
-                </View>
+              {/* Quantity & Date */}
+              <View style={{ flex: 1.4 }}>
+                <Text numberOfLines={1} style={styles.qtyText}>
+                  {booking.quantityQuintals} Qtl
+                </Text>
+                <Text numberOfLines={1} style={styles.dateText}>
+                  {booking.dateString.split(',')[0]}
+                </Text>
               </View>
 
-              {/* Inspector Badge if available */}
-              {booking.inspectorName ? (
-                <View style={styles.inspectorRow}>
-                  <View style={styles.avatarCircle}>
-                    <Ionicons name="person" size={12} color={ThemeColors.textSecondary} />
-                  </View>
-                  <Text style={styles.inspectorName}>{booking.inspectorName}</Text>
+              {/* Status Badge */}
+              <View style={{ flex: 1.4, alignItems: 'flex-end' }}>
+                <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
+                  <Text numberOfLines={1} style={[styles.statusText, { color: statusStyle.text }]}>
+                    {statusStyle.label}
+                  </Text>
                 </View>
-              ) : null}
+              </View>
             </Pressable>
           );
         })}
@@ -137,17 +133,17 @@ export const RecentBookingsList = memo(function RecentBookingsList({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 100, // accommodate floating bottom nav
+    marginTop: 14,
+    marginBottom: 90,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: ThemeColors.textPrimary,
     letterSpacing: -0.3,
@@ -158,123 +154,88 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   viewAllText: {
-    fontSize: 13,
+    fontSize: 12,
     color: ThemeColors.textSecondary,
     fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,
   },
-  list: {
-    gap: 14,
-  },
-  card: {
+  tableCard: {
     backgroundColor: ThemeColors.white,
-    borderRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#EFEFEF',
-  },
-  cardPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.985 }],
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  cropTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: ThemeColors.textPrimary,
-    letterSpacing: -0.4,
-    marginBottom: 4,
-  },
-  mandiSubtitle: {
-    fontSize: 14,
-    color: ThemeColors.textSecondary,
-    fontWeight: '500',
-    marginBottom: 14,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-    marginBottom: 14,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  infoText: {
-    fontSize: 13,
-    color: ThemeColors.textSecondary,
-    fontWeight: '500',
-  },
-  progressContainer: {
-    marginBottom: 10,
-  },
-  progressBarTrack: {
-    height: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 6,
-  },
-  progressLabelRow: {
+  tableHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  progressLabelText: {
+  headerCell: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ThemeColors.textMuted,
+    textTransform: 'uppercase',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  rowPressed: {
+    backgroundColor: '#F9FAFB',
+  },
+  cropText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ThemeColors.textPrimary,
+  },
+  codeText: {
+    fontSize: 11,
+    color: ThemeColors.textMuted,
+    fontWeight: '500',
+  },
+  mandiText: {
     fontSize: 12,
-    color: ThemeColors.textSecondary,
     fontWeight: '600',
+    color: ThemeColors.textPrimary,
   },
-  quantityText: {
+  subMandiText: {
+    fontSize: 10,
+    color: ThemeColors.textSecondary,
+  },
+  qtyText: {
     fontSize: 12,
     fontWeight: '700',
     color: ThemeColors.textPrimary,
   },
-  inspectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  avatarCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inspectorName: {
-    fontSize: 12,
-    fontWeight: '600',
+  dateText: {
+    fontSize: 10,
     color: ThemeColors.textSecondary,
+  },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

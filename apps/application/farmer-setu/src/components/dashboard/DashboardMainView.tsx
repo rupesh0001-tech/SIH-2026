@@ -1,6 +1,5 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { ScrollView, StyleSheet, View, Alert } from 'react-native';
-import { FilterPillBar } from './FilterPillBar';
 import { StatCardsList } from './StatCardsList';
 import { SuggestionCard } from './SuggestionCard';
 import { RecentBookingsList } from './RecentBookingsList';
@@ -11,45 +10,43 @@ interface DashboardMainViewProps {
   onNavigateToMandi: () => void;
 }
 
-const DASHBOARD_FILTER_OPTIONS = [
-  { id: 'all', label: 'All Overview' },
-  { id: 'crops', label: 'Active Crops' },
-  { id: 'prices', label: 'Price Trends' },
-  { id: 'auctions', label: 'Auctions' },
-];
-
 const STATIC_STATS: StatCardItem[] = [
   {
     id: 'stat-sales',
     title: 'Total Sales & Payouts',
-    value: '₹1,42,800',
+    value: '₹1.42L',
     colorTheme: 'mint',
     iconName: 'cash-outline',
-    trendText: '+14.2% vs last month',
+    trendText: '+14.2% month',
     trendDirection: 'up',
-    badgeLabel: 'Direct Bank Credit',
   },
   {
     id: 'stat-lots',
     title: 'Active Crop Lots',
     value: '450',
-    unit: 'Quintals',
+    unit: 'Qtl',
     colorTheme: 'peach',
     iconName: 'leaf-outline',
-    subtitle: '3 Lots in APMC Auction Queue',
-    progressPercent: 72,
-    badgeLabel: 'In Transit / Gate',
+    subtitle: '3 Lots in Queue',
   },
   {
     id: 'stat-rate',
-    title: 'Nashik APMC Onion Rate',
+    title: 'Nashik APMC Rate',
     value: '₹2,680',
-    unit: '/ qtl',
+    unit: '/qtl',
     colorTheme: 'lavender',
     iconName: 'trending-up-outline',
-    trendText: '↑ +₹120 today (High Demand)',
+    trendText: '+₹120 today',
     trendDirection: 'up',
-    badgeLabel: 'Market Rate',
+  },
+  {
+    id: 'stat-msp',
+    title: 'MSP Realization',
+    value: '98.4%',
+    colorTheme: 'softGray',
+    iconName: 'shield-checkmark-outline',
+    trendText: 'Above Gov MSP',
+    trendDirection: 'up',
   },
 ];
 
@@ -67,7 +64,7 @@ const STATIC_RECENT_BOOKINGS: BookingItem[] = [
   {
     id: 'b-1',
     bookingCode: 'BK-9402',
-    cropName: 'Onion',
+    cropName: 'Onion (Red)',
     cropVariety: 'Nashik Red A-Grade',
     mandiName: 'Nashik APMC Mandi',
     gateNo: 'Gate 3',
@@ -77,9 +74,7 @@ const STATIC_RECENT_BOOKINGS: BookingItem[] = [
     statusLabel: 'In progress',
     progressPercent: 65,
     progressLabel: 'Unloaded & Quality Graded',
-    inspectorName: 'Patil (Grading Officer)',
     quantityQuintals: 240,
-    commentsCount: 12,
   },
   {
     id: 'b-2',
@@ -91,12 +86,25 @@ const STATIC_RECENT_BOOKINGS: BookingItem[] = [
     dateString: 'May 30, 2026',
     timeSlot: '11:00 AM',
     status: 'confirmed',
-    statusLabel: 'Confirmed Pass',
+    statusLabel: 'Confirmed',
     progressPercent: 20,
     progressLabel: 'Vehicle Entry QR Pass Generated',
-    inspectorName: 'Officer Deshmukh',
     quantityQuintals: 180,
-    commentsCount: 2,
+  },
+  {
+    id: 'b-3',
+    bookingCode: 'BK-7612',
+    cropName: 'Wheat (Sharbati)',
+    cropVariety: 'Grade A',
+    mandiName: 'Lasalgaon Mandi',
+    gateNo: 'Gate 2',
+    dateString: 'Jun 02, 2026',
+    timeSlot: '02:00 PM',
+    status: 'confirmed',
+    statusLabel: 'Confirmed',
+    progressPercent: 10,
+    progressLabel: 'QR Pass Issued',
+    quantityQuintals: 320,
   },
 ];
 
@@ -104,8 +112,6 @@ export const DashboardMainView = memo(function DashboardMainView({
   onNavigateToBookings,
   onNavigateToMandi,
 }: DashboardMainViewProps) {
-  const [activeFilter, setActiveFilter] = useState('all');
-
   const handleStatPress = (statId: string) => {
     if (statId === 'stat-rate') {
       onNavigateToMandi();
@@ -130,14 +136,7 @@ export const DashboardMainView = memo(function DashboardMainView({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}>
       
-      {/* Filter Tabs */}
-      <FilterPillBar
-        options={DASHBOARD_FILTER_OPTIONS}
-        activeFilter={activeFilter}
-        onSelectFilter={setActiveFilter}
-      />
-
-      {/* Pastel Stat Cards matching reference design */}
+      {/* 2x2 Grid of Pastel Stat Cards */}
       <View style={styles.statsSection}>
         <StatCardsList stats={STATIC_STATS} onCardPress={handleStatPress} />
       </View>
@@ -148,7 +147,7 @@ export const DashboardMainView = memo(function DashboardMainView({
         onPress={handleSuggestionPress}
       />
 
-      {/* Recent Bookings matching reference cards */}
+      {/* Recent Bookings Compact Table */}
       <RecentBookingsList
         bookings={STATIC_RECENT_BOOKINGS}
         onViewAllPress={onNavigateToBookings}
@@ -163,7 +162,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   statsSection: {
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 4,
+    marginBottom: 6,
   },
 });

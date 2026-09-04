@@ -56,7 +56,7 @@ export const StatCardsList = memo(function StatCardsList({
   onCardPress,
 }: StatCardsListProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.gridContainer}>
       {stats.map((stat) => {
         const bg = getBackgroundColor(stat.colorTheme);
         const textColor = getTextColor(stat.colorTheme);
@@ -67,49 +67,32 @@ export const StatCardsList = memo(function StatCardsList({
             key={stat.id}
             onPress={() => onCardPress?.(stat.id)}
             style={({ pressed }) => [
-              styles.card,
+              styles.gridCard,
               { backgroundColor: bg },
               pressed && styles.cardPressed,
             ]}>
             
-            {/* Header: Title & Circular Floating Icon */}
+            {/* Top row: Title and Floating Icon */}
             <View style={styles.cardHeader}>
-              <View>
-                <Text style={[styles.cardTitle, { color: textColor }]}>{stat.title}</Text>
-                {stat.badgeLabel ? (
-                  <View style={styles.badgePill}>
-                    <Text style={styles.badgePillText}>{stat.badgeLabel}</Text>
-                  </View>
-                ) : null}
-              </View>
-
+              <Text numberOfLines={1} style={[styles.cardTitle, { color: textColor }]}>
+                {stat.title}
+              </Text>
               <View style={styles.floatingIconCircle}>
-                <Ionicons name={stat.iconName as any} size={20} color={iconColor} />
+                <Ionicons name={stat.iconName as any} size={16} color={iconColor} />
               </View>
             </View>
 
             {/* Big Value Display */}
             <View style={styles.valueRow}>
-              <Text style={styles.valueText}>{stat.value}</Text>
-              {stat.unit ? <Text style={styles.unitText}>{stat.unit}</Text> : null}
+              <Text numberOfLines={1} style={styles.valueText}>
+                {stat.value}
+              </Text>
+              {stat.unit ? (
+                <Text style={styles.unitText}>{stat.unit}</Text>
+              ) : null}
             </View>
 
-            {/* Optional Progress Bar matching Ref Image 1 & 2 */}
-            {stat.progressPercent !== undefined ? (
-              <View style={styles.progressBarBackground}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${stat.progressPercent}%`,
-                      backgroundColor: iconColor,
-                    },
-                  ]}
-                />
-              </View>
-            ) : null}
-
-            {/* Footer / Trend / Subtitle */}
+            {/* Trend or Subtitle */}
             <View style={styles.cardFooter}>
               {stat.trendText ? (
                 <View style={styles.trendRow}>
@@ -120,14 +103,14 @@ export const StatCardsList = memo(function StatCardsList({
                     ]}>
                     {stat.trendDirection === 'down' ? '↓' : '↑'}
                   </Text>
-                  <Text style={[styles.trendText, { color: textColor }]}>
+                  <Text numberOfLines={1} style={[styles.trendText, { color: textColor }]}>
                     {stat.trendText}
                   </Text>
                 </View>
-              ) : null}
-
-              {stat.subtitle ? (
-                <Text style={styles.subtitleText}>{stat.subtitle}</Text>
+              ) : stat.subtitle ? (
+                <Text numberOfLines={1} style={styles.subtitleText}>
+                  {stat.subtitle}
+                </Text>
               ) : null}
             </View>
           </Pressable>
@@ -138,106 +121,88 @@ export const StatCardsList = memo(function StatCardsList({
 });
 
 const styles = StyleSheet.create({
-  container: {
+  gridContainer: {
     paddingHorizontal: 20,
-    gap: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  card: {
-    borderRadius: 26,
-    padding: 20,
+  gridCard: {
+    width: '48%',
+    borderRadius: 22,
+    padding: 14,
+    minHeight: 125,
+    justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
   },
   cardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.985 }],
+    opacity: 0.88,
+    transform: [{ scale: 0.97 }],
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
+    flex: 1,
+    marginRight: 4,
     letterSpacing: -0.2,
   },
-  badgePill: {
-    marginTop: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  badgePillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: ThemeColors.textPrimary,
-  },
   floatingIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: ThemeColors.white,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 10,
+    marginVertical: 4,
   },
   valueText: {
-    fontSize: 32,
+    fontSize: 21,
     fontWeight: '800',
     color: ThemeColors.textPrimary,
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
   },
   unitText: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     color: ThemeColors.textSecondary,
-    marginLeft: 6,
-  },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
+    marginLeft: 3,
   },
   cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginTop: 2,
   },
   trendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
   trendArrow: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '800',
-    marginRight: 4,
+    marginRight: 2,
   },
   trendUp: {
     color: '#16A34A',
@@ -246,11 +211,11 @@ const styles = StyleSheet.create({
     color: '#DC2626',
   },
   trendText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
   },
   subtitleText: {
-    fontSize: 12,
+    fontSize: 11,
     color: ThemeColors.textSecondary,
     fontWeight: '600',
   },
