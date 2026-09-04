@@ -1,59 +1,107 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   TextInput,
   Text,
   StyleSheet,
   Pressable,
-  type TextInputProps,
+  Platform,
+  type NativeSyntheticEvent,
+  type TextInputFocusEventData,
 } from 'react-native';
+import type { AppInputProps } from '@/interfaces';
 
-interface AppInputProps extends TextInputProps {
-  label?: string;
-  error?: string | null;
-  isPassword?: boolean;
-}
+export const AppInput = memo(
+  forwardRef<TextInput, AppInputProps>(function AppInput(
+    {
+      label,
+      error,
+      isPassword = false,
+      style,
+      autoCapitalize = 'none',
+      autoCorrect = false,
+      editable = true,
+      onFocus,
+      onBlur,
+      ...restProps
+    },
+    ref
+  ) {
+    const [showPassword, setShowPassword] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const internalInputRef = useRef<TextInput>(null);
 
-export const AppInput = memo(function AppInput({
-  label,
-  error,
-  isPassword,
-  style,
-  ...props
-}: AppInputProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+    useImperativeHandle(ref, () => internalInputRef.current as TextInput);
 
-  return (
-    <View style={styles.container}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View
-        style={[
-          styles.inputWrapper,
-          isFocused && styles.inputWrapperFocused,
-          Boolean(error) && styles.inputWrapperError,
-        ]}>
-        <TextInput
-          placeholderTextColor="#9CA3AF"
-          secureTextEntry={isPassword ? !showPassword : false}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          style={[styles.input, style]}
-          {...props}
-        />
-        {isPassword ? (
-          <Pressable
-            onPress={() => setShowPassword((prev) => !prev)}
-            hitSlop={12}
-            style={styles.eyeButton}>
-            <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
-          </Pressable>
-        ) : null}
+    const handleFocus = useCallback(
+      (e: NativeSyntheticEvent<any>) => {
+        setIsFocused(true);
+        if (onFocus) {
+          onFocus(e);
+        }
+      },
+      [onFocus]
+    );
+
+    const handleBlur = useCallback(
+      (e: NativeSyntheticEvent<any>) => {
+        setIsFocused(false);
+        if (onBlur) {
+          onBlur(e);
+        }
+      },
+      [onBlur]
+    );
+
+    const handleWrapperPress = useCallback(() => {
+      if (editable) {
+        internalInputRef.current?.focus();
+      }
+    }, [editable]);
+
+    const isSecure = isPassword ? !showPassword : restProps.secureTextEntry;
+
+    return (
+      <View style={styles.container}>
+        {label ? <Text style={styles.label}>{label}</Text> : null}
+        <Pressable
+          onPress={handleWrapperPress}
+          accessible={false}
+          style={[
+            styles.inputWrapper,
+            isFocused && styles.inputWrapperFocused,
+            Boolean(error) && styles.inputWrapperError,
+            !editable && styles.inputWrapperDisabled,
+          ]}>
+          <TextInput
+            ref={internalInputRef}
+            placeholderTextColor="#9CA3AF"
+            selectionColor="#8B5CF6"
+            cursorColor="#8B5CF6"
+            autoCapitalize={autoCapitalize}
+            autoCorrect={autoCorrect}
+            spellCheck={false}
+            editable={editable}
+            secureTextEntry={isSecure}
+            {...restProps}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={[styles.input, style]}
+          />
+          {isPassword ? (
+            <Pressable
+              onPress={() => setShowPassword((prev) => !prev)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.eyeButton}>
+              <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
+            </Pressable>
+          ) : null}
+        </Pressable>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
-  );
-});
+    );
+  })
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -78,27 +126,33 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   inputWrapperFocused: {
-    borderColor: '#EA580C',
+    borderColor: '#8B5CF6',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#EA580C',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 2,
   },
+
   inputWrapperError: {
     borderColor: '#EF4444',
     backgroundColor: '#FEF2F2',
+  },
+  inputWrapperDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#E5E7EB',
   },
   input: {
     flex: 1,
     fontSize: 15,
     color: '#111827',
-    paddingVertical: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    includeFontPadding: false,
   },
   eyeButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: '#E5E7EB',
   },

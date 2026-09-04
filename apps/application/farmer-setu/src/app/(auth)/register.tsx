@@ -3,18 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { BackButton } from '@/components/ui/BackButton';
-import { SocialAuthPills } from '@/components/ui/SocialAuthPill';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -31,15 +31,19 @@ export default function RegisterScreen() {
     setValidationError(null);
     clearError();
 
-    if (!name.trim()) {
-      setValidationError('Please enter your full name.');
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+
+    if (!cleanName || cleanName.length < 2) {
+      setValidationError('Please enter your full name (minimum 2 characters).');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      setValidationError('Please enter a valid email address.');
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setValidationError('Please provide a valid email address.');
       return;
     }
-    if (phone.trim() && !/^\+?[1-9]\d{9,13}$/.test(phone.trim())) {
+    if (cleanPhone && cleanPhone.length < 10) {
       setValidationError('Please enter a valid 10-digit mobile number.');
       return;
     }
@@ -57,28 +61,81 @@ export default function RegisterScreen() {
     }
 
     const success = await register({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim() ? phone.trim() : undefined,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone || undefined,
       password,
     });
 
     if (success) {
-      router.replace('/(farmer)/dashboard');
+      router.push({
+        pathname: '/(auth)/verify-otp',
+        params: {
+          email: cleanEmail,
+          phone: cleanPhone || '',
+        },
+      });
     }
   }, [name, email, phone, password, confirmPassword, register, router, clearError]);
 
+  const handleNameChange = useCallback(
+    (text: string) => {
+      setName(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handlePhoneChange = useCallback(
+    (text: string) => {
+      setPhone(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      setEmail(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setPassword(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
+  const handleConfirmPasswordChange = useCallback(
+    (text: string) => {
+      setConfirmPassword(text);
+      if (validationError) setValidationError(null);
+      if (error) clearError();
+    },
+    [validationError, error, clearError]
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}>
           
-          {/* Top Bar */}
+          {/* Top Bar with Safe Inset */}
           <View style={styles.topBar}>
             <BackButton onPress={() => router.back()} />
           </View>
@@ -87,18 +144,8 @@ export default function RegisterScreen() {
           <View style={styles.headerSection}>
             <Text style={styles.title}>Let's go! Register in seconds.</Text>
             <Text style={styles.subtitle}>
-              Set up your Farmer profile to sell directly at APMC mandis.
+              Create your Farmer profile to access transparent APMC mandi auctions.
             </Text>
-          </View>
-
-          {/* Social Pills */}
-          <SocialAuthPills />
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or Register with</Text>
-            <View style={styles.dividerLine} />
           </View>
 
           {/* Error Banner */}
@@ -108,61 +155,53 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
+
           {/* Form */}
           <View style={styles.formSection}>
             <AppInput
               label="Farmer Full Name"
               placeholder="e.g. Ramesh Kisan"
               value={name}
-              onChangeText={(text) => {
-                setName(text);
-                if (validationError) setValidationError(null);
-              }}
+              onChangeText={handleNameChange}
+              autoCapitalize="words"
+              autoComplete="name"
             />
 
             <AppInput
               label="Mobile Phone Number"
               placeholder="e.g. 9876543210"
               value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                if (validationError) setValidationError(null);
-              }}
+              onChangeText={handlePhoneChange}
               keyboardType="phone-pad"
+              autoComplete="tel"
             />
 
             <AppInput
               label="Email Address"
               placeholder="e.g. ramesh@kisan.com"
               value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (validationError) setValidationError(null);
-              }}
+              onChangeText={handleEmailChange}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
             />
 
             <AppInput
               label="Password"
-              placeholder="Min 8 characters (letters & numbers)"
+              placeholder="Min 8 chars (at least 1 letter & 1 number)"
               value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (validationError) setValidationError(null);
-              }}
+              onChangeText={handlePasswordChange}
               isPassword
+              autoComplete="new-password"
             />
 
             <AppInput
               label="Confirm Password"
               placeholder="Re-enter your password"
               value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                if (validationError) setValidationError(null);
-              }}
+              onChangeText={handleConfirmPasswordChange}
               isPassword
+              autoComplete="new-password"
             />
 
             {/* CTA */}
@@ -177,7 +216,9 @@ export default function RegisterScreen() {
             {/* Footer */}
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>Already have an account? </Text>
-              <Pressable onPress={() => router.push('/(auth)/login')}>
+              <Pressable
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={() => router.push('/(auth)/login')}>
                 <Text style={styles.loginLinkText}>Log in</Text>
               </Pressable>
             </View>
@@ -203,13 +244,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topBar: {
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerSection: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   title: {
     fontSize: 26,
@@ -226,7 +267,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: 14,
   },
   dividerLine: {
     flex: 1,
@@ -236,7 +277,7 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: 12,
     color: '#9CA3AF',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     fontWeight: '500',
   },
   errorBanner: {
@@ -245,25 +286,26 @@ const styles = StyleSheet.create({
     borderColor: '#FECACA',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   errorBannerText: {
     color: '#B91C1C',
     fontSize: 13,
     fontWeight: '500',
+    lineHeight: 18,
   },
   formSection: {
-    marginTop: 4,
+    marginTop: 2,
   },
   registerButton: {
-    backgroundColor: '#16A34A', // High contrast fresh emerald green
-    marginTop: 10,
+    backgroundColor: '#F97316',
+    marginTop: 8,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 22,
   },
   footerText: {
     fontSize: 14,
@@ -272,6 +314,6 @@ const styles = StyleSheet.create({
   loginLinkText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#16A34A',
+    color: '#EA580C',
   },
 });

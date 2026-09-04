@@ -5,6 +5,8 @@ import type {
   FarmerUser,
   LoginPayload,
   RegisterPayload,
+  SendOtpPayload,
+  VerifyOtpPayload,
 } from '@/interfaces';
 
 /**
@@ -57,6 +59,51 @@ export async function registerFarmerApi(
   return requestApi<AuthResponseData>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Pure modular function to verify a 6-digit OTP code for a farmer account.
+ */
+export async function verifyOtpFarmerApi(
+  payload: VerifyOtpPayload
+): Promise<ApiResponse<AuthResponseData>> {
+  const result = await requestApi<AuthResponseData>('/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({
+      identifier: payload.identifier.trim().toLowerCase(),
+      code: payload.code.trim(),
+      type: payload.type || 'EMAIL_VERIFICATION',
+    }),
+  });
+
+  if (!result.success || !result.data) {
+    return result;
+  }
+
+  if (result.data.user && result.data.user.role !== 'FARMER') {
+    return {
+      success: false,
+      message: 'Access denied: Verified profile is not a farmer account.',
+      code: 'UNAUTHORIZED_ROLE',
+    };
+  }
+
+  return result;
+}
+
+/**
+ * Pure modular function to dispatch or resend an OTP code.
+ */
+export async function sendOtpFarmerApi(
+  payload: SendOtpPayload
+): Promise<ApiResponse<{ message: string }>> {
+  return requestApi<{ message: string }>('/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({
+      identifier: payload.identifier.trim().toLowerCase(),
+      type: payload.type || 'EMAIL_VERIFICATION',
+    }),
   });
 }
 
