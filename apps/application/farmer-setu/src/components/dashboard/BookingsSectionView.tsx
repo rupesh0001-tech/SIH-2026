@@ -248,7 +248,7 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
           <Ionicons
             name="options-outline"
             size={20}
-            color={hasActiveFilters ? '#FFFFFF' : '#16A34A'}
+            color={hasActiveFilters ? '#FFFFFF' : '#8B5CF6'}
           />
         </Pressable>
       </View>
@@ -479,8 +479,8 @@ const styles = StyleSheet.create({
     borderColor: '#EFEFEF',
   },
   filterBtnActive: {
-    backgroundColor: '#16A34A',
-    borderColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
+    borderColor: '#7C3AED',
   },
   activeFiltersRow: {
     flexDirection: 'row',
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activePill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#EDE9FE',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   activePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#7C3AED',
   },
   clearAllText: {
     fontSize: 11,
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   statusChipActive: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
   },
   statusChipInactive: {
     backgroundColor: ThemeColors.white,
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   passBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   pageIndicatorPill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#EDE9FE',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
   pageIndicatorText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#7C3AED',
   },
   emptyCard: {
     backgroundColor: ThemeColors.white,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   resetBtn: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,

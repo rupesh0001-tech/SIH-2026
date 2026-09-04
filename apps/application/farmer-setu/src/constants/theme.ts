@@ -19,19 +19,19 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Vibrant Purple Floating Navigation Bar (#9564DD)
-  navBg: '#9564DD',
-  navBorder: 'rgba(255, 255, 255, 0.22)',
+  // Softened/Faded Purple Floating Navigation Bar (#9564DD with subtle transparency)
+  navBg: 'rgba(149, 100, 221, 0.88)',
+  navBorder: 'rgba(255, 255, 255, 0.30)',
   navActiveBg: '#FFFFFF',
-  navActiveIcon: '#9564DD',
-  navInactiveIcon: 'rgba(255, 255, 255, 0.8)',
-  darkNav: '#9564DD',
+  navActiveIcon: '#8B5CF6',
+  navInactiveIcon: 'rgba(255, 255, 255, 0.85)',
+  darkNav: '#8B5CF6',
 
-
-  // Consistent Brand Action Colors across entire app
-  primary: '#16A34A',
-  primaryHover: '#15803D',
-  primaryLight: '#DCFCE7',
+  // Consistent Brand Action Colors across entire app - Dashboard Purple Theme
+  primary: '#8B5CF6',
+  primaryHover: '#7C3AED',
+  primaryLight: '#EDE9FE',
+  primaryDark: '#6D28D9',
 
   // Text
   textPrimary: '#111827',

@@ -83,16 +83,16 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   primary: {
-    backgroundColor: '#16A34A', // Dashboard mint/emerald green
-    shadowColor: '#16A34A',
+    backgroundColor: '#8B5CF6', // Dashboard purple/lavender
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 4,
   },
   accent: {
-    backgroundColor: '#A28EF9', // Dashboard lavender
-    shadowColor: '#A28EF9',
+    backgroundColor: '#9564DD', // Faded/brand purple
+    shadowColor: '#9564DD',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#16A34A',
+    borderColor: '#8B5CF6',
   },
   baseText: {
     fontSize: 16,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   outlineText: {
-    color: '#16A34A',
+    color: '#8B5CF6',
   },
   disabledText: {
     color: '#9CA3AF',

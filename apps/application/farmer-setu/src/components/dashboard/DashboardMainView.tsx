@@ -1,12 +1,9 @@
 import React, { memo } from 'react';
-import { ScrollView, StyleSheet, View, Alert } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { StatCardsList } from './StatCardsList';
-import { QuickActionsGrid } from './QuickActionsGrid';
 import { CommodityTickerSection } from './CommodityTickerSection';
-import { SuggestionCard } from './SuggestionCard';
-import { WeatherWidget } from './WeatherWidget';
 import { RecentBookingsList } from './RecentBookingsList';
-import type { StatCardItem, SuggestionItem, BookingItem } from '@/interfaces';
+import type { StatCardItem, BookingItem } from '@/interfaces';
 
 interface DashboardMainViewProps {
   onNavigateToBookings: () => void;
@@ -53,16 +50,6 @@ const STATIC_STATS: StatCardItem[] = [
   },
 ];
 
-const STATIC_SUGGESTION: SuggestionItem = {
-  id: 'sug-1',
-  title: 'Favorable selling window for Soybean',
-  description:
-    'Prices are expected to peak by 4-6% over the next 3 days at Pune APMC due to lower arrivals from Marathwada.',
-  badge: 'AI Market Advisory',
-  accentColor: 'lavender',
-  actionLabel: 'View Mandi Forecast',
-};
-
 const STATIC_RECENT_BOOKINGS: BookingItem[] = [
   {
     id: 'b-1',
@@ -108,17 +95,6 @@ export const DashboardMainView = memo(function DashboardMainView({
     }
   };
 
-  const handleSuggestionPress = () => {
-    Alert.alert(
-      'AI Crop Advisory',
-      'Soybean prices are anticipated to remain strong. Consider booking a slot at Pune or Lasalgaon Mandi for highest realized modal value.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Book Slot', onPress: onNavigateToMandi },
-      ]
-    );
-  };
-
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -129,23 +105,8 @@ export const DashboardMainView = memo(function DashboardMainView({
         <StatCardsList stats={STATIC_STATS} onCardPress={handleStatPress} />
       </View>
 
-      {/* Quick Actions Grid */}
-      <QuickActionsGrid
-        onBookPassPress={onNavigateToMandi}
-        onAdvisoryPress={handleSuggestionPress}
-      />
-
       {/* Live APMC Commodity Price Ticker */}
       <CommodityTickerSection onSelectCrop={() => onNavigateToMandi()} />
-
-      {/* Weather & Harvesting Advisory */}
-      <WeatherWidget />
-
-      {/* AI Suggestion Advisory */}
-      <SuggestionCard
-        suggestion={STATIC_SUGGESTION}
-        onPress={handleSuggestionPress}
-      />
 
       {/* Recent Bookings Cards */}
       <RecentBookingsList

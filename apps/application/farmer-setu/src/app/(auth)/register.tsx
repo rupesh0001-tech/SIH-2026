@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   registerButton: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
     marginTop: 8,
   },
   footerRow: {
@@ -314,6 +314,6 @@ const styles = StyleSheet.create({
   loginLinkText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#16A34A',
+    color: '#8B5CF6',
   },
 });

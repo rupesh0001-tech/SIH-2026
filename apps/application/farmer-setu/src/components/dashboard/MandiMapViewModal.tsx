@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  Image,
   Platform,
   Alert,
 } from 'react-native';
@@ -22,12 +21,16 @@ interface MandiMapViewModalProps {
   onSelectMandi: (mandi: MandiItem) => void;
 }
 
-const OSM_MAP_TILES = [
-  'https://tile.openstreetmap.org/11/1474/914.png',
-  'https://tile.openstreetmap.org/11/1475/914.png',
-  'https://tile.openstreetmap.org/11/1474/915.png',
-  'https://tile.openstreetmap.org/11/1475/915.png',
+const DATE_OPTIONS = [
+  { id: 'today', label: 'Today (Live)' },
+  { id: 'tomorrow', label: 'Tomorrow' },
+  { id: '3days', label: 'Next 3 Days' },
+  { id: 'all', label: 'All Dates' },
 ];
+
+const CROP_OPTIONS = ['All', 'Onion', 'Soybean', 'Cotton', 'Wheat', 'Tomato', 'Gram'];
+const RADIUS_OPTIONS = ['All', '15 km', '30 km', '50 km', '100 km'];
+const FARMER_OPTIONS = ['All', '50+ Active', '100+ Peak'];
 
 export const MandiMapViewModal = memo(function MandiMapViewModal({
   visible,
@@ -38,8 +41,12 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
   const [selectedMandi, setSelectedMandi] = useState<MandiItem>(mandis[0] || null);
   const [mapSearch, setMapSearch] = useState('');
   const [selectedCrop, setSelectedCrop] = useState('All');
-  const [farmerFilter, setFarmerFilter] = useState('All');
+  const [selectedDate, setSelectedDate] = useState('today');
+  const [selectedRadius, setSelectedRadius] = useState('All');
+  const [selectedFarmerCount, setSelectedFarmerCount] = useState('All');
+  const [showFiltersBar, setShowFiltersBar] = useState(true);
 
+  // Filter Mandis based on search, crop, radius, and farmer density
   const filteredMandis = useMemo(() => {
     return mandis.filter((m) => {
       if (selectedCrop !== 'All' && !m.topCrop.toLowerCase().includes(selectedCrop.toLowerCase())) {
@@ -52,11 +59,31 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
         const matchesCrop = m.topCrop.toLowerCase().includes(query);
         if (!matchesName && !matchesDistrict && !matchesCrop) return false;
       }
-      if (farmerFilter === '50+' && (m.activeFarmersCount || 0) < 50) return false;
-      if (farmerFilter === '100+' && (m.activeFarmersCount || 0) < 100) return false;
+      if (selectedRadius === '15 km' && m.distanceKm > 15) return false;
+      if (selectedRadius === '30 km' && m.distanceKm > 30) return false;
+      if (selectedRadius === '50 km' && m.distanceKm > 50) return false;
+      if (selectedRadius === '100 km' && m.distanceKm > 100) return false;
+
+      if (selectedFarmerCount === '50+ Active' && (m.activeFarmersCount || 0) < 50) return false;
+      if (selectedFarmerCount === '100+ Peak' && (m.activeFarmersCount || 0) < 100) return false;
+
       return true;
     });
-  }, [mandis, selectedCrop, mapSearch, farmerFilter]);
+  }, [mandis, selectedCrop, mapSearch, selectedRadius, selectedFarmerCount]);
+
+  const activeFiltersCount =
+    (selectedCrop !== 'All' ? 1 : 0) +
+    (selectedDate !== 'today' ? 1 : 0) +
+    (selectedRadius !== 'All' ? 1 : 0) +
+    (selectedFarmerCount !== 'All' ? 1 : 0);
+
+  const resetFilters = () => {
+    setSelectedCrop('All');
+    setSelectedDate('today');
+    setSelectedRadius('All');
+    setSelectedFarmerCount('All');
+    setMapSearch('');
+  };
 
   return (
     <Modal
@@ -65,7 +92,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
       transparent={false}
       onRequestClose={onClose}>
       <View style={styles.modalContainer}>
-        {/* Improved Sleek Map Header Bar */}
+        {/* Sleek Top Map Header Bar */}
         <View style={styles.headerBar}>
           <Pressable
             onPress={onClose}
@@ -76,9 +103,9 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
           {/* Integrated Search Bar inside Header */}
           <View style={styles.searchBox}>
-            <Ionicons name="search" size={16} color={ThemeColors.textSecondary} />
+            <Ionicons name="search" size={16} color="#8B5CF6" />
             <TextInput
-              placeholder="Search mandis on map..."
+              placeholder="Search mandis, district or crop..."
               placeholderTextColor="#9CA3AF"
               value={mapSearch}
               onChangeText={setMapSearch}
@@ -86,98 +113,216 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             />
             {mapSearch ? (
               <Pressable onPress={() => setMapSearch('')}>
-                <Ionicons name="close-circle" size={14} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
               </Pressable>
             ) : null}
           </View>
 
+          {/* Filter Toggle Button */}
+          <Pressable
+            onPress={() => setShowFiltersBar((prev) => !prev)}
+            style={({ pressed }) => [
+              styles.filterToggleBtn,
+              activeFiltersCount > 0 && styles.filterToggleActive,
+              pressed && styles.pressed,
+            ]}>
+            <Ionicons
+              name="options"
+              size={18}
+              color={activeFiltersCount > 0 ? '#FFFFFF' : '#8B5CF6'}
+            />
+            {activeFiltersCount > 0 ? (
+              <View style={styles.activeFilterCountDot}>
+                <Text style={styles.activeFilterCountText}>{activeFiltersCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+
           {/* Calibrate GPS button */}
           <Pressable
             onPress={() => {
-              Alert.alert('GPS Location Locked', 'Accuracy: 5m • Niphad Farmer Farm (Nashik)');
+              Alert.alert('GPS Location Calibrated', 'Accurate to 5m • Niphad, Nashik District (Live)');
             }}
             style={({ pressed }) => [styles.gpsBtn, pressed && styles.pressed]}>
-            <Ionicons name="locate" size={18} color="#16A34A" />
+            <Ionicons name="locate" size={18} color="#8B5CF6" />
           </Pressable>
         </View>
 
-        {/* In-Map Quick Filters: Crop & Farmer Count */}
-        <View style={styles.filterStrip}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
-            {['All', 'Onion', 'Soybean', 'Cotton', 'Wheat'].map((c) => {
-              const active = selectedCrop === c;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => setSelectedCrop(c)}
-                  style={[styles.cropChip, active ? styles.chipActive : styles.chipInactive]}>
-                  <Text style={[styles.cropChipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
-                    {c}
-                  </Text>
-                </Pressable>
-              );
-            })}
-            <View style={styles.vDivider} />
-            {['All', '50+ Farmers', '100+ Farmers'].map((f) => {
-              const filterKey = f.replace(' Farmers', '');
-              const active = farmerFilter === filterKey;
-              return (
-                <Pressable
-                  key={f}
-                  onPress={() => setFarmerFilter(filterKey)}
-                  style={[styles.cropChip, active ? styles.chipActive : styles.chipInactive]}>
-                  <Text style={[styles.cropChipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
-                    👥 {f}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* OpenStreetMap Layer & Map Canvas */}
-        <View style={styles.mapCanvas}>
-          {/* OpenStreetMap Tile Grid */}
-          <View style={styles.osmTileContainer}>
-            <View style={styles.osmRow}>
-              <Image
-                source={{ uri: OSM_MAP_TILES[0] }}
-                style={styles.osmTile}
-                resizeMode="cover"
-              />
-              <Image
-                source={{ uri: OSM_MAP_TILES[1] }}
-                style={styles.osmTile}
-                resizeMode="cover"
-              />
+        {/* In-Map Expandable Filters Drawer */}
+        {showFiltersBar ? (
+          <View style={styles.filtersContainer}>
+            {/* Date Selection Filter */}
+            <View style={styles.filterSectionRow}>
+              <View style={styles.filterLabelCol}>
+                <Ionicons name="calendar-outline" size={13} color="#8B5CF6" />
+                <Text style={styles.filterSectionLabel}>Date</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterChipRow}>
+                {DATE_OPTIONS.map((d) => {
+                  const isActive = selectedDate === d.id;
+                  return (
+                    <Pressable
+                      key={d.id}
+                      onPress={() => setSelectedDate(d.id)}
+                      style={[
+                        styles.chipPill,
+                        isActive ? styles.chipPillActive : styles.chipPillInactive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.chipPillText,
+                          isActive ? styles.chipTextActive : styles.chipTextInactive,
+                        ]}>
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
-            <View style={styles.osmRow}>
-              <Image
-                source={{ uri: OSM_MAP_TILES[2] }}
-                style={styles.osmTile}
-                resizeMode="cover"
-              />
-              <Image
-                source={{ uri: OSM_MAP_TILES[3] }}
-                style={styles.osmTile}
-                resizeMode="cover"
-              />
+
+            {/* Crop Filter */}
+            <View style={styles.filterSectionRow}>
+              <View style={styles.filterLabelCol}>
+                <Ionicons name="leaf-outline" size={13} color="#8B5CF6" />
+                <Text style={styles.filterSectionLabel}>Crop</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterChipRow}>
+                {CROP_OPTIONS.map((c) => {
+                  const isActive = selectedCrop === c;
+                  return (
+                    <Pressable
+                      key={c}
+                      onPress={() => setSelectedCrop(c)}
+                      style={[
+                        styles.chipPill,
+                        isActive ? styles.chipPillActive : styles.chipPillInactive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.chipPillText,
+                          isActive ? styles.chipTextActive : styles.chipTextInactive,
+                        ]}>
+                        {c}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Distance Radius & Farmers Row */}
+            <View style={styles.filterSectionRow}>
+              <View style={styles.filterLabelCol}>
+                <Ionicons name="navigate-circle-outline" size={13} color="#8B5CF6" />
+                <Text style={styles.filterSectionLabel}>Radius</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterChipRow}>
+                {RADIUS_OPTIONS.map((r) => {
+                  const isActive = selectedRadius === r;
+                  return (
+                    <Pressable
+                      key={r}
+                      onPress={() => setSelectedRadius(r)}
+                      style={[
+                        styles.chipPill,
+                        isActive ? styles.chipPillActive : styles.chipPillInactive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.chipPillText,
+                          isActive ? styles.chipTextActive : styles.chipTextInactive,
+                        ]}>
+                        {r}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                <View style={styles.vDivider} />
+                {FARMER_OPTIONS.map((f) => {
+                  const isActive = selectedFarmerCount === f;
+                  return (
+                    <Pressable
+                      key={f}
+                      onPress={() => setSelectedFarmerCount(f)}
+                      style={[
+                        styles.chipPill,
+                        isActive ? styles.chipPillActive : styles.chipPillInactive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.chipPillText,
+                          isActive ? styles.chipTextActive : styles.chipTextInactive,
+                        ]}>
+                        👥 {f}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                {activeFiltersCount > 0 ? (
+                  <Pressable onPress={resetFilters} style={styles.resetPill}>
+                    <Ionicons name="refresh" size={12} color="#EF4444" />
+                    <Text style={styles.resetPillText}>Reset</Text>
+                  </Pressable>
+                ) : null}
+              </ScrollView>
             </View>
           </View>
+        ) : null}
 
-          {/* OSM Attribution Watermark */}
-          <View style={styles.osmAttribution}>
-            <Text style={styles.osmAttributionText}>© OpenStreetMap contributors</Text>
+        {/* Vector Map Canvas (Zero blocked tiles, 100% offline & fast) */}
+        <View style={styles.mapCanvas}>
+          {/* Topographic Background Pattern & Grid Lines */}
+          <View style={styles.vectorMapBackground}>
+            {/* Geographic Terrain Zones */}
+            <View style={styles.terrainZone1} />
+            <View style={styles.terrainZone2} />
+            <View style={styles.terrainRiver} />
+
+            {/* Grid Coordinates Lines */}
+            <View style={[styles.gridLineH, { top: '20%' }]} />
+            <View style={[styles.gridLineH, { top: '40%' }]} />
+            <View style={[styles.gridLineH, { top: '60%' }]} />
+            <View style={[styles.gridLineH, { top: '80%' }]} />
+
+            <View style={[styles.gridLineV, { left: '25%' }]} />
+            <View style={[styles.gridLineV, { left: '50%' }]} />
+            <View style={[styles.gridLineV, { left: '75%' }]} />
+
+            {/* Highway Corridors */}
+            <View style={styles.highwayNH3} />
+            <View style={styles.highwaySH22} />
+
+            {/* Region / District Labels */}
+            <Text style={[styles.districtWatermark, { top: '15%', left: '12%' }]}>
+              NASHIK REGION • NH-3
+            </Text>
+            <Text style={[styles.districtWatermark, { top: '55%', right: '12%' }]}>
+              PUNE CORRIDOR • NH-60
+            </Text>
+            <Text style={[styles.districtWatermark, { bottom: '18%', left: '20%' }]}>
+              NIPHAD VALLEY
+            </Text>
           </View>
 
           {/* User Location Radar Pin (Center) */}
           <View style={styles.userLocationMarker}>
             <View style={styles.userPulseRing} />
+            <View style={styles.userPulseRingInner} />
             <View style={styles.userDot}>
               <Ionicons name="navigate" size={12} color="#FFFFFF" />
             </View>
             <View style={styles.userLabelCard}>
-              <Text style={styles.userLabelText}>You are here</Text>
+              <Text style={styles.userLabelText}>My Farm (You)</Text>
             </View>
           </View>
 
@@ -186,11 +331,13 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             const isSelected = selectedMandi?.id === mandi.id;
 
             const pinOffsets: Array<{ top: `${number}%`; left: `${number}%` }> = [
-              { top: '22%', left: '58%' },
-              { top: '35%', left: '16%' },
-              { top: '62%', left: '68%' },
-              { top: '74%', left: '24%' },
-              { top: '48%', left: '76%' },
+              { top: '22%', left: '56%' },
+              { top: '34%', left: '16%' },
+              { top: '62%', left: '66%' },
+              { top: '74%', left: '26%' },
+              { top: '46%', left: '76%' },
+              { top: '28%', left: '80%' },
+              { top: '78%', left: '60%' },
             ];
             const offset = pinOffsets[index % pinOffsets.length];
 
@@ -207,16 +354,18 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   <Ionicons
                     name="storefront"
                     size={12}
-                    color={isSelected ? '#FFFFFF' : '#16A34A'}
+                    color={isSelected ? '#FFFFFF' : '#8B5CF6'}
                   />
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.pinBadgeText,
-                      isSelected && styles.pinBadgeTextSelected,
-                    ]}>
-                    {mandi.modalPrice.split(' ')[0]}
-                  </Text>
+                  <View>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.pinBadgeText,
+                        isSelected && styles.pinBadgeTextSelected,
+                      ]}>
+                      {mandi.modalPrice.split(' ')[0]}
+                    </Text>
+                  </View>
                 </View>
                 <View
                   style={[
@@ -227,17 +376,23 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               </Pressable>
             );
           })}
+
+          {/* Map Compass & Scale Info */}
+          <View style={styles.mapInfoBadge}>
+            <Ionicons name="compass-outline" size={14} color="#8B5CF6" />
+            <Text style={styles.mapInfoText}>Live APMC Vector Radar • {filteredMandis.length} Mandis</Text>
+          </View>
         </View>
 
-        {/* Selected Mandi Bottom Card */}
+        {/* Selected Mandi Bottom Floating Sheet Card */}
         {selectedMandi ? (
           <View style={styles.bottomCardContainer}>
             <View style={styles.mandiDetailCard}>
               <View style={styles.detailHeader}>
-                <View>
+                <View style={styles.detailTitleCol}>
                   <Text style={styles.detailName}>{selectedMandi.name}</Text>
                   <Text style={styles.detailDistrict}>
-                    {selectedMandi.district} • {selectedMandi.distanceKm} km away
+                    {selectedMandi.district} • {selectedMandi.distanceKm} km away • {selectedMandi.operatingHours || '08:00 AM - 06:00 PM'}
                   </Text>
                 </View>
 
@@ -252,16 +407,20 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
               <View style={styles.infoPillsRow}>
                 <View style={styles.tagPill}>
-                  <Ionicons name="leaf-outline" size={12} color="#15803D" />
+                  <Ionicons name="leaf-outline" size={12} color="#7C3AED" />
                   <Text style={styles.tagText}>{selectedMandi.topCrop}</Text>
                 </View>
                 <View style={styles.tagPill}>
-                  <Ionicons name="people-outline" size={12} color="#D97706" />
+                  <Ionicons name="people-outline" size={12} color="#8B5CF6" />
                   <Text style={styles.tagText}>{selectedMandi.activeFarmersCount || 85} Farmers</Text>
                 </View>
                 <View style={styles.tagPill}>
                   <Ionicons name="time-outline" size={12} color="#4B5563" />
                   <Text style={styles.tagText}>{selectedMandi.estimatedQueueTime}</Text>
+                </View>
+                <View style={[styles.tagPill, { backgroundColor: '#EDE9FE' }]}>
+                  <Ionicons name="checkmark-circle" size={12} color="#7C3AED" />
+                  <Text style={[styles.tagText, { color: '#7C3AED' }]}>Gate Open</Text>
                 </View>
               </View>
 
@@ -271,7 +430,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   onSelectMandi(selectedMandi);
                 }}
                 style={({ pressed }) => [styles.bookPassBtn, pressed && styles.pressed]}>
-                <Text style={styles.bookPassText}>Book Gate Entry Slot</Text>
+                <Text style={styles.bookPassText}>Book Gate Entry Pass for {selectedMandi.name.split(' ')[0]}</Text>
                 <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -285,7 +444,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#EAF0F6',
+    backgroundColor: '#F3F4F6',
     paddingTop: Platform.OS === 'ios' ? 48 : 24,
   },
   headerBar: {
@@ -293,13 +452,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 8,
-    gap: 10,
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE9FE',
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: ThemeColors.white,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -309,12 +471,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: ThemeColors.white,
+    backgroundColor: '#F8F9FA',
     borderRadius: 18,
     paddingHorizontal: 12,
-    height: 40,
+    height: 38,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EDE9FE',
     gap: 6,
   },
   searchInput: {
@@ -322,135 +484,271 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: ThemeColors.textPrimary,
   },
-  gpsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: ThemeColors.white,
+  filterToggleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EDE9FE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#DDD6FE',
+    position: 'relative',
+  },
+  filterToggleActive: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#7C3AED',
+  },
+  activeFilterCountDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#EF4444',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeFilterCountText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  gpsBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EDE9FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
   },
   pressed: {
     opacity: 0.8,
     transform: [{ scale: 0.96 }],
   },
-  filterStrip: {
-    paddingVertical: 6,
-    backgroundColor: '#F8F9FA',
+
+  // Filters strip
+  filtersContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  filterContent: {
-    paddingHorizontal: 16,
+    borderBottomColor: '#EDE9FE',
     gap: 6,
+  },
+  filterSectionRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  cropChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
+  filterLabelCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    width: 58,
   },
-  chipActive: {
-    backgroundColor: '#16A34A',
-  },
-  chipInactive: {
-    backgroundColor: ThemeColors.white,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  cropChipText: {
+  filterSectionLabel: {
     fontSize: 11,
     fontWeight: '700',
+    color: '#6B7280',
+  },
+  filterChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chipPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  chipPillActive: {
+    backgroundColor: '#8B5CF6',
+  },
+  chipPillInactive: {
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  chipPillText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   chipTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   chipTextInactive: {
-    color: ThemeColors.textSecondary,
+    color: '#4B5563',
   },
   vDivider: {
     width: 1,
-    height: 20,
+    height: 16,
     backgroundColor: '#D1D5DB',
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
+  resetPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: '#FEF2F2',
+  },
+  resetPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+
+  // Vector Canvas Map
   mapCanvas: {
     flex: 1,
-    backgroundColor: '#E4ECF4',
+    backgroundColor: '#E8ECF2',
     position: 'relative',
     overflow: 'hidden',
   },
-  osmTileContainer: {
+  vectorMapBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  terrainZone1: {
+    position: 'absolute',
+    top: '-10%',
+    left: '-10%',
+    width: '70%',
+    height: '60%',
+    borderRadius: 180,
+    backgroundColor: '#DFE7EE',
+    opacity: 0.8,
+  },
+  terrainZone2: {
+    position: 'absolute',
+    bottom: '-15%',
+    right: '-10%',
+    width: '75%',
+    height: '65%',
+    borderRadius: 200,
+    backgroundColor: '#D7E1EA',
+    opacity: 0.7,
+  },
+  terrainRiver: {
+    position: 'absolute',
+    top: '10%',
+    left: '42%',
+    width: 16,
+    height: '90%',
+    backgroundColor: '#BFDBFE',
+    transform: [{ rotate: '-25deg' }],
+    borderRadius: 8,
     opacity: 0.85,
   },
-
-
-  osmRow: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  osmTile: {
-    flex: 1,
-    height: '100%',
-  },
-  osmAttribution: {
+  gridLineH: {
     position: 'absolute',
-    bottom: 6,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
-  osmAttributionText: {
-    fontSize: 9,
-    color: '#4B5563',
-    fontWeight: '600',
+  gridLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
+  highwayNH3: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '52%',
+    width: 6,
+    backgroundColor: '#FDE047',
+    transform: [{ rotate: '18deg' }],
+    opacity: 0.65,
+  },
+  highwaySH22: {
+    position: 'absolute',
+    top: '48%',
+    left: 0,
+    right: 0,
+    height: 5,
+    backgroundColor: '#FDBA74',
+    transform: [{ rotate: '-8deg' }],
+    opacity: 0.65,
+  },
+  districtWatermark: {
+    position: 'absolute',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: 'rgba(107, 114, 128, 0.45)',
+  },
+
+  // User Marker
   userLocationMarker: {
     position: 'absolute',
     top: '50%',
-    left: '48%',
+    left: '46%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   userPulseRing: {
     position: 'absolute',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(22, 163, 74, 0.3)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(139, 92, 246, 0.22)',
+  },
+  userPulseRingInner: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(139, 92, 246, 0.35)',
   },
   userDot: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#FFFFFF',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   userLabelCard: {
     position: 'absolute',
     top: 28,
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 6,
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   userLabelText: {
     fontSize: 9,
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '800',
   },
+
+  // Mandi Markers
   mandiPinContainer: {
     position: 'absolute',
     alignItems: 'center',
@@ -459,22 +757,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: ThemeColors.white,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4,
+    borderWidth: 1.5,
+    borderColor: '#EDE9FE',
   },
   pinBadgeSelected: {
-    backgroundColor: '#16A34A',
-    borderColor: '#16A34A',
-    transform: [{ scale: 1.08 }],
+    backgroundColor: '#8B5CF6',
+    borderColor: '#7C3AED',
+    transform: [{ scale: 1.1 }],
   },
   pinBadgeText: {
     fontSize: 11,
@@ -485,37 +783,66 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   pinAnchorDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#16A34A',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#8B5CF6',
     marginTop: 2,
   },
   pinAnchorDotSelected: {
-    backgroundColor: '#15803D',
+    backgroundColor: '#7C3AED',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
+  mapInfoBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#EDE9FE',
+  },
+  mapInfoText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+
+  // Bottom Detail Card
   bottomCardContainer: {
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
     backgroundColor: 'transparent',
   },
   mandiDetailCard: {
-    backgroundColor: ThemeColors.white,
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1.5,
+    borderColor: '#EDE9FE',
   },
   detailHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  detailTitleCol: {
+    flex: 1,
+    marginRight: 8,
   },
   detailName: {
     fontSize: 16,
@@ -523,7 +850,7 @@ const styles = StyleSheet.create({
     color: ThemeColors.textPrimary,
   },
   detailDistrict: {
-    fontSize: 12,
+    fontSize: 11,
     color: ThemeColors.textSecondary,
     marginTop: 2,
     fontWeight: '500',
@@ -539,13 +866,14 @@ const styles = StyleSheet.create({
   detailTrend: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#7C3AED',
     marginTop: 2,
   },
   infoPillsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   tagPill: {
     flexDirection: 'row',
@@ -565,14 +893,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#16A34A',
+    backgroundColor: '#8B5CF6',
     paddingVertical: 12,
     borderRadius: 14,
     gap: 6,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   bookPassText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
 });
