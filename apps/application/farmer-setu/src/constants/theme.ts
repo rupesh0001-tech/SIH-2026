@@ -19,13 +19,14 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Light Greenish Floating Navigation Bar (Light fade green)
-  navBg: '#E8F7EC',
-  navBorder: '#C8EED2',
-  navActiveBg: '#16A34A',
-  navActiveIcon: '#FFFFFF',
-  navInactiveIcon: '#2D6A4F',
-  darkNav: '#16A34A',
+  // Vibrant Purple Floating Navigation Bar (#9564DD)
+  navBg: '#9564DD',
+  navBorder: 'rgba(255, 255, 255, 0.22)',
+  navActiveBg: '#FFFFFF',
+  navActiveIcon: '#9564DD',
+  navInactiveIcon: 'rgba(255, 255, 255, 0.8)',
+  darkNav: '#9564DD',
+
 
   // Consistent Brand Action Colors across entire app
   primary: '#16A34A',

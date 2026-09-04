@@ -98,9 +98,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderWidth: 1.5,
     borderColor: ThemeColors.navBorder,
-    shadowColor: '#16A34A',
+    shadowColor: '#9564DD',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.28,
     shadowRadius: 14,
     elevation: 6,
     gap: 12,
@@ -115,12 +115,13 @@ const styles = StyleSheet.create({
   },
   navItemActive: {
     backgroundColor: ThemeColors.navActiveBg,
-    shadowColor: '#16A34A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
     elevation: 3,
   },
+
   navItemPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.94 }],
