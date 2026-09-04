@@ -1,40 +1,98 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { ThemeColors } from '@/constants/theme';
+import { FloatingBottomNav } from '@/components/navigation/FloatingBottomNav';
+import {
+  DashboardHeader,
+  DashboardMainView,
+  MandiSectionView,
+  BookingsSectionView,
+  SettingsSectionView,
+} from '@/components/dashboard';
+import type { NavTabType } from '@/interfaces';
 
 export default function FarmerDashboardScreen() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<NavTabType>('dashboard');
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/(auth)/login');
-  };
+  const farmerName = user?.name || 'Ramesh Kisan';
+
+  const getHeaderInfo = useCallback(() => {
+    switch (activeTab) {
+      case 'dashboard':
+        return {
+          title: 'Dashboard',
+          subtitle: `Namaste, ${farmerName} 🌾`,
+        };
+      case 'mandi':
+        return {
+          title: 'Market Mandis',
+          subtitle: 'Live APMC Rates & Auctions',
+        };
+      case 'bookings':
+        return {
+          title: 'My Bookings',
+          subtitle: 'Gate Passes & Auction Slots',
+        };
+      case 'settings':
+        return {
+          title: 'My Profile',
+          subtitle: 'Kisan KYC & App Settings',
+        };
+    }
+  }, [activeTab, farmerName]);
+
+  const handleSearchPress = useCallback(() => {
+    Alert.alert('Search Mandi Setu', 'Search crops, modal prices, mandi slots, or token numbers.', [
+      { text: 'OK' },
+    ]);
+  }, []);
+
+  const handleNotificationPress = useCallback(() => {
+    Alert.alert(
+      'Mandi Notifications',
+      '• Onion slot #BK-9402 assay is completed.\n• Tomorrow MSP rates announced for Lasalgaon APMC.',
+      [{ text: 'OK' }]
+    );
+  }, []);
+
+  const headerInfo = getHeaderInfo();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
-        {/* Plain Dashboard text as requested */}
-        <Text style={styles.plainText}>Dashboard</Text>
+        {/* Top Header */}
+        <DashboardHeader
+          title={headerInfo.title}
+          subtitle={headerInfo.subtitle}
+          onSearchPress={handleSearchPress}
+          onNotificationPress={handleNotificationPress}
+          hasUnreadNotifications={true}
+        />
 
-        {/* Minimal farmer session indicator */}
-        {user ? (
-          <View style={styles.farmerInfoCard}>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>FARMER</Text>
-            </View>
-            <Text style={styles.farmerName}>{user.name}</Text>
-            <Text style={styles.farmerContact}>{user.email || user.phone}</Text>
-          </View>
-        ) : null}
+        {/* Dynamic Section Content */}
+        <View style={styles.contentArea}>
+          {activeTab === 'dashboard' ? (
+            <DashboardMainView
+              onNavigateToBookings={() => setActiveTab('bookings')}
+              onNavigateToMandi={() => setActiveTab('mandi')}
+            />
+          ) : null}
 
-        <Pressable
-          onPress={handleLogout}
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}>
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </Pressable>
+          {activeTab === 'mandi' ? <MandiSectionView /> : null}
+
+          {activeTab === 'bookings' ? <BookingsSectionView /> : null}
+
+          {activeTab === 'settings' ? <SettingsSectionView /> : null}
+        </View>
+
+        {/* Sleek Floating Bottom Navigation Bar */}
+        <FloatingBottomNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </View>
     </SafeAreaView>
   );
@@ -43,74 +101,13 @@ export default function FarmerDashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAF9',
+    backgroundColor: ThemeColors.background,
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    backgroundColor: ThemeColors.background,
   },
-  plainText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 20,
-    letterSpacing: -0.5,
-  },
-  farmerInfoCard: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  roleBadge: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#15803D',
-    letterSpacing: 0.5,
-  },
-  farmerName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  farmerContact: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  logoutButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  logoutText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#DC2626',
+  contentArea: {
+    flex: 1,
   },
 });

@@ -15,7 +15,6 @@ import { useAuth } from '@/context/AuthContext';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { BackButton } from '@/components/ui/BackButton';
-import { SocialAuthPills } from '@/components/ui/SocialAuthPill';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -70,23 +69,17 @@ export default function LoginScreen() {
     [validationError, error, clearError]
   );
 
-  const handleSocialPress = useCallback((provider: string) => {
-    Alert.alert(
-      `${provider} Sign-In`,
-      `Please use your registered Farmer mobile number or email to log in directly.`,
-      [{ text: 'OK' }]
-    );
-  }, []);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}>
           
           {/* Top Bar with Safe Inset */}
           <View style={styles.topBar}>
@@ -99,20 +92,6 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>
               Good to see you again. Log in to your Farmer account.
             </Text>
-          </View>
-
-          {/* Social Auth Pills */}
-          <SocialAuthPills
-            onGooglePress={() => handleSocialPress('Google')}
-            onApplePress={() => handleSocialPress('Apple')}
-            onPhonePress={() => handleSocialPress('Phone')}
-          />
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or Login with credentials</Text>
-            <View style={styles.dividerLine} />
           </View>
 
           {/* Error Banner */}
@@ -133,6 +112,7 @@ export default function LoginScreen() {
               ) : null}
             </View>
           ) : null}
+
 
           {/* Form Inputs */}
           <View style={styles.formSection}>

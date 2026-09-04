@@ -59,6 +59,13 @@ This repository contains the project source code, configuration, documentation, 
 * Mention important tests and checks that were run.
 * Clearly call out assumptions, limitations, risks, or unresolved issues.
 
+## React Native & Mobile
+
+* **Keyboard Avoidance**: Whenever an input that triggers a virtual keyboard is focused/clicked, it must NEVER be overlapped by the keyboard. Always wrap input flows with proper keyboard avoidance (`KeyboardAvoidingView` with platform-specific behavior/offset, `ScrollView` with `keyboardShouldPersistTaps="handled"`, `automaticallyAdjustKeyboardInsets={true}`, and appropriate bottom insets) so that the focused input shifts/scrolls smoothly above the keyboard.
+* **Component Architecture**: Split screens into modular, pure function components. Never dump entire screens into a single monolithic file.
+* **Styling & Aesthetics**: Adhere to curated color palettes, sleek micro-interactions, responsive touch targets (minimum 44x44), and polished native feel.
+
 ## frontend 
 * always try to compoenets that are already present (if essential ) 
 * make components or relavant UI donnot dump everything in single file 
+
