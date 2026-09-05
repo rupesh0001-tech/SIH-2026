@@ -16,7 +16,7 @@ const getBackgroundColor = (theme: StatColorTheme) => {
     case 'peach':
       return '#FFE8C6';
     case 'lavender':
-      return '#E7E0FF';
+      return '#E0F2FE';
     case 'softGray':
     default:
       return '#EAECEE';
@@ -30,7 +30,7 @@ const getTextColor = (theme: StatColorTheme) => {
     case 'peach':
       return '#8D4004';
     case 'lavender':
-      return '#43289E';
+      return '#0369A1';
     case 'softGray':
     default:
       return '#1F2937';
@@ -44,7 +44,7 @@ const getIconColor = (theme: StatColorTheme) => {
     case 'peach':
       return '#EA580C';
     case 'lavender':
-      return '#7C3AED';
+      return '#0284C7';
     case 'softGray':
     default:
       return '#4B5563';

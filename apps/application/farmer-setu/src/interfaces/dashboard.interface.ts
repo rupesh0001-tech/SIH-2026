@@ -57,11 +57,13 @@ export interface MandiItem {
   trendDirection: 'up' | 'down';
   estimatedQueueTime: string;
   isOpen: boolean;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   todayArrivalsQtl?: number;
   operatingHours?: string;
   activeFarmersCount: number;
+  address?: string;
+  contactPhone?: string;
 }
 
 export interface MandiFilterCriteria {

@@ -6,6 +6,7 @@ import { ThemeColors } from '@/constants/theme';
 interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
+  showSearchButton?: boolean;
   onSearchPress?: () => void;
   onNotificationPress?: () => void;
   hasUnreadNotifications?: boolean;
@@ -14,6 +15,7 @@ interface DashboardHeaderProps {
 export const DashboardHeader = memo(function DashboardHeader({
   title,
   subtitle,
+  showSearchButton = false,
   onSearchPress,
   onNotificationPress,
   hasUnreadNotifications = true,
@@ -26,12 +28,14 @@ export const DashboardHeader = memo(function DashboardHeader({
       </View>
 
       <View style={styles.actionsRow}>
-        <Pressable
-          onPress={onSearchPress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.buttonPressed]}>
-          <Ionicons name="search-outline" size={20} color={ThemeColors.textPrimary} />
-        </Pressable>
+        {showSearchButton ? (
+          <Pressable
+            onPress={onSearchPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.buttonPressed]}>
+            <Ionicons name="search-outline" size={20} color={ThemeColors.textPrimary} />
+          </Pressable>
+        ) : null}
 
         <Pressable
           onPress={onNotificationPress}

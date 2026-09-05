@@ -20,3 +20,27 @@ export interface BackButtonProps {
   transparent?: boolean;
   style?: any;
 }
+
+export interface PickerOption {
+  label: string;
+  value: string;
+  sublabel?: string;
+  badge?: string;
+}
+
+export interface SearchablePickerModalProps {
+  visible: boolean;
+  title: string;
+  placeholder?: string;
+  options: PickerOption[];
+  selectedValue: string;
+  onSelect: (value: string) => void;
+  onClose: () => void;
+}
+
+export interface CalendarPickerModalProps {
+  visible: boolean;
+  selectedDate: string;
+  onSelectDate: (formattedDate: string) => void;
+  onClose: () => void;
+}

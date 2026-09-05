@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#FFEDD5',
+    backgroundColor: '#DCFCE7',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   targetIdentifier: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#EA580C',
+    color: '#16A34A',
     marginTop: 4,
     textAlign: 'center',
   },
@@ -285,17 +285,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   otpBoxFocused: {
-    borderColor: '#EA580C',
+    borderColor: '#16A34A',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#EA580C',
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 2,
   },
   otpBoxFilled: {
-    borderColor: '#F97316',
-    backgroundColor: '#FFF7ED',
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
   },
   otpBoxError: {
     borderColor: '#EF4444',
@@ -313,9 +313,6 @@ const styles = StyleSheet.create({
     height: 1,
   },
   verifyButton: {
-    height: 52,
-    backgroundColor: '#F97316',
-    borderRadius: 16,
     marginTop: 12,
   },
   resendContainer: {
@@ -331,7 +328,7 @@ const styles = StyleSheet.create({
   resendLink: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#EA580C',
+    color: '#16A34A',
   },
   cooldownText: {
     fontSize: 14,

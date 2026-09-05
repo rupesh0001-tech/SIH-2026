@@ -1,10 +1,10 @@
 import { Platform } from 'react-native';
 
 export const ThemeColors = {
-  // Core palette from reference
-  lavender: '#A28EF9',
-  lavenderLight: '#F3EFFF',
-  lavenderDark: '#7857E8',
+  // Core palette - Fresh Agricultural Emerald & Mint Theme
+  lavender: '#16A34A',
+  lavenderLight: '#DCFCE7',
+  lavenderDark: '#15803D',
 
   mint: '#A4F5A6',
   mintLight: '#ECFCEC',
@@ -19,19 +19,19 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Softened/Faded Purple Floating Navigation Bar (#9564DD with subtle transparency)
-  navBg: 'rgba(149, 100, 221, 0.88)',
-  navBorder: 'rgba(255, 255, 255, 0.30)',
+  // Sleek Deep Forest Floating Navigation Bar with frosted glassmorphism
+  navBg: 'rgba(21, 128, 61, 0.94)',
+  navBorder: 'rgba(255, 255, 255, 0.28)',
   navActiveBg: '#FFFFFF',
-  navActiveIcon: '#8B5CF6',
-  navInactiveIcon: 'rgba(255, 255, 255, 0.85)',
-  darkNav: '#8B5CF6',
+  navActiveIcon: '#15803D',
+  navInactiveIcon: 'rgba(255, 255, 255, 0.90)',
+  darkNav: '#15803D',
 
-  // Consistent Brand Action Colors across entire app - Dashboard Purple Theme
-  primary: '#8B5CF6',
-  primaryHover: '#7C3AED',
-  primaryLight: '#EDE9FE',
-  primaryDark: '#6D28D9',
+  // Primary Brand Action Colors across entire app
+  primary: '#16A34A',
+  primaryHover: '#15803D',
+  primaryLight: '#DCFCE7',
+  primaryDark: '#166534',
 
   // Text
   textPrimary: '#111827',
