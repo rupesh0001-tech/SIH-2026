@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma.js";
+import { prisma, MandiApprovalStatus, BookingStatus } from "../lib/prisma.js";
 import { AppError } from "../middlewares/errorHandler.middleware.js";
 import {
   UpdateFarmerProfileInput,
@@ -6,7 +6,18 @@ import {
 } from "../interfaces/index.js";
 
 /**
- * Retrieves the authenticated farmer's full profile including address and crop details.
+ * Generates the next sequential unique Farmer ID in the format FAR001, FAR002, etc.
+ */
+export async function generateNextFarmerCode(): Promise<string> {
+  const count = await prisma.farmerProfile.count({
+    where: { farmerCode: { not: null } },
+  });
+  const nextNum = count + 1;
+  return `FAR${String(nextNum).padStart(3, "0")}`;
+}
+
+/**
+ * Retrieves the authenticated farmer's full profile including address, KYC, and crop details.
  */
 export async function getFarmerProfile(userId: string): Promise<FarmerFullProfileResponse> {
   const user = await prisma.user.findUnique({
@@ -28,11 +39,14 @@ export async function getFarmerProfile(userId: string): Promise<FarmerFullProfil
     throw new AppError("Farmer account not found.", 404, "USER_NOT_FOUND");
   }
 
-  // If farmerProfile doesn't exist yet, create an initial one
+  // If farmerProfile doesn't exist yet, create an initial one with sequential farmerCode
   if (!user.farmerProfile) {
+    const nextCode = await generateNextFarmerCode();
     const newProfile = await prisma.farmerProfile.create({
       data: {
         userId: user.id,
+        farmerCode: nextCode,
+        isProfileComplete: false,
         mainCrops: [],
         secondaryCrops: [],
       },
@@ -40,15 +54,29 @@ export async function getFarmerProfile(userId: string): Promise<FarmerFullProfil
 
     return {
       ...user,
-      farmerProfile: newProfile,
+      farmerProfile: newProfile as any,
     };
   }
 
-  return user;
+  // If farmerProfile exists but lacks a farmerCode, assign one
+  if (!user.farmerProfile.farmerCode) {
+    const nextCode = await generateNextFarmerCode();
+    const updatedProfile = await prisma.farmerProfile.update({
+      where: { id: user.farmerProfile.id },
+      data: { farmerCode: nextCode },
+    });
+
+    return {
+      ...user,
+      farmerProfile: updatedProfile as any,
+    };
+  }
+
+  return user as any;
 }
 
 /**
- * Updates a farmer's personal information, detailed address, and agricultural crop details.
+ * Updates a farmer's personal information, KYC identity documents, address, and crop details.
  */
 export async function updateFarmerProfile(
   userId: string,
@@ -57,6 +85,7 @@ export async function updateFarmerProfile(
   // 1. Verify user exists
   const existingUser = await prisma.user.findUnique({
     where: { id: userId },
+    include: { farmerProfile: true },
   });
 
   if (!existingUser) {
@@ -90,6 +119,12 @@ export async function updateFarmerProfile(
   // 4. Prepare FarmerProfile fields to upsert
   const profileUpsertData: Record<string, unknown> = {};
 
+  if (input.dob !== undefined) profileUpsertData.dob = input.dob?.trim() || null;
+  if (input.address !== undefined) profileUpsertData.address = input.address?.trim() || null;
+  if (input.idType !== undefined) profileUpsertData.idType = input.idType;
+  if (input.idNumber !== undefined) profileUpsertData.idNumber = input.idNumber?.trim() || null;
+  if (input.avatarUrl !== undefined) profileUpsertData.avatarUrl = input.avatarUrl?.trim() || null;
+
   if (input.addressLine1 !== undefined) profileUpsertData.addressLine1 = input.addressLine1?.trim() || null;
   if (input.addressLine2 !== undefined) profileUpsertData.addressLine2 = input.addressLine2?.trim() || null;
   if (input.village !== undefined) profileUpsertData.village = input.village?.trim() || null;
@@ -107,7 +142,30 @@ export async function updateFarmerProfile(
   if (input.irrigationType !== undefined) profileUpsertData.irrigationType = input.irrigationType?.trim() || null;
   if (input.farmLocation !== undefined) profileUpsertData.farmLocation = input.farmLocation?.trim() || null;
 
-  // 5. Execute transaction to update User and upsert FarmerProfile
+  // Calculate profile completion status
+  const currentProfile = existingUser.farmerProfile;
+  const finalAddress = (input.address !== undefined ? input.address : currentProfile?.address) || (input.addressLine1 !== undefined ? input.addressLine1 : currentProfile?.addressLine1);
+  const finalDob = input.dob !== undefined ? input.dob : currentProfile?.dob;
+  const finalIdType = input.idType !== undefined ? input.idType : currentProfile?.idType;
+  const finalIdNumber = input.idNumber !== undefined ? input.idNumber : currentProfile?.idNumber;
+
+  const isComplete = Boolean(
+    finalAddress && finalAddress.trim() !== "" &&
+    finalDob && finalDob.trim() !== "" &&
+    finalIdType &&
+    finalIdNumber && finalIdNumber.trim() !== ""
+  );
+
+  profileUpsertData.isProfileComplete = isComplete;
+
+  // 5. Ensure farmerCode is set if missing
+  let farmerCode = currentProfile?.farmerCode;
+  if (!farmerCode) {
+    farmerCode = await generateNextFarmerCode();
+    profileUpsertData.farmerCode = farmerCode;
+  }
+
+  // 6. Execute transaction to update User and upsert FarmerProfile
   const [updatedUser] = await prisma.$transaction([
     prisma.user.update({
       where: { id: userId },
@@ -127,19 +185,149 @@ export async function updateFarmerProfile(
       where: { userId },
       create: {
         userId,
+        farmerCode,
         ...profileUpsertData,
       },
       update: profileUpsertData,
     }),
   ]);
 
-  // 6. Return refreshed complete profile
+  // 7. Return refreshed complete profile
   const fullProfile = await prisma.farmerProfile.findUnique({
     where: { userId },
   });
 
   return {
     ...updatedUser,
-    farmerProfile: fullProfile,
+    farmerProfile: fullProfile as any,
   };
+}
+
+/**
+ * Lists all approved mandis from database with slots and metrics for farmer app.
+ */
+export async function listApprovedMandis() {
+  const mandis = await prisma.mandiProfile.findMany({
+    where: {
+      approvalStatus: MandiApprovalStatus.APPROVED,
+    },
+    include: {
+      slots: {
+        where: { isActive: true },
+        orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      },
+    },
+    orderBy: { mandiName: "asc" },
+  });
+
+  return mandis.map((m) => ({
+    id: m.id,
+    name: m.mandiName || "APMC Mandi",
+    apmcCode: m.apmcCode,
+    district: m.district || "Pimpri Chinchwad, Pune",
+    address: m.address,
+    state: m.state || "Maharashtra",
+    latitude: m.latitude || 18.6272,
+    longitude: m.longitude || 73.8131,
+    topCrop: m.topCrop || "Onion (Red) & Tomato",
+    modalPrice: m.modalPrice || "₹2,750 / qtl",
+    priceTrend: m.priceTrend || "+₹140 today",
+    trendDirection: m.trendDirection || "up",
+    estimatedQueueTime: m.estimatedQueueTime || "15 mins wait",
+    activeFarmersCount: m.activeFarmersCount || 120,
+    isOpen: m.isOpen,
+    operatingHours: m.operatingHours,
+    slots: m.slots,
+  }));
+}
+
+/**
+ * Creates a gate arrival slot booking for a farmer with profile completion check.
+ */
+export async function createFarmerBooking(
+  farmerUserId: string,
+  input: {
+    mandiProfileId: string;
+    slotId: string;
+    crop: string;
+    variety?: string;
+    quantityQuintals: number;
+    vehicleNumber?: string;
+    notes?: string;
+  }
+): Promise<any> {
+  // 1. Verify farmer profile is complete
+  const farmerProfile = await prisma.farmerProfile.findUnique({
+    where: { userId: farmerUserId },
+  });
+
+  if (!farmerProfile || !farmerProfile.isProfileComplete) {
+    throw new AppError(
+      "Profile KYC incomplete. Please complete your profile (Address, DOB, ID proof) before booking a mandi slot.",
+      403,
+      "PROFILE_INCOMPLETE"
+    );
+  }
+
+  // 2. Verify slot exists and has capacity
+  const slot = await prisma.mandiSlot.findUnique({
+    where: { id: input.slotId },
+  });
+
+  if (!slot || !slot.isActive) {
+    throw new AppError("The requested mandi arrival slot is no longer active.", 404, "SLOT_NOT_FOUND");
+  }
+
+  if (slot.availableBookings <= 0) {
+    throw new AppError("This slot has reached maximum farmer capacity.", 400, "SLOT_CAPACITY_FULL");
+  }
+
+  // 3. Generate token
+  const token = `TKN-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // 4. Create booking and decrement available slot
+  const [booking] = await prisma.$transaction([
+    prisma.booking.create({
+      data: {
+        token,
+        farmerId: farmerUserId,
+        mandiProfileId: input.mandiProfileId,
+        slotId: input.slotId,
+        crop: input.crop,
+        variety: input.variety,
+        quantityQuintals: input.quantityQuintals,
+        vehicleNumber: input.vehicleNumber,
+        notes: input.notes,
+        status: BookingStatus.ACCEPTED,
+      },
+      include: {
+        mandiProfile: true,
+        slot: true,
+      },
+    }),
+    prisma.mandiSlot.update({
+      where: { id: input.slotId },
+      data: {
+        bookedFarmers: { increment: 1 },
+        availableBookings: { decrement: 1 },
+        bookedCapacityQuintals: { increment: input.quantityQuintals },
+      },
+    }),
+  ]);
+
+  return booking;
+}
+
+/**
+ * Gets all bookings made by the authenticated farmer.
+ */
+export async function getFarmerBookings(farmerUserId: string): Promise<any[]> {
+  return prisma.booking.findMany({
+    where: { farmerId: farmerUserId },
+    include: {
+      mandiProfile: true,
+      slot: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }

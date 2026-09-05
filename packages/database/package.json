@@ -17,6 +17,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
+    "seed": "bun src/seed.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

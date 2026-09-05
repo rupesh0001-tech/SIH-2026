@@ -8,13 +8,18 @@ const phoneValidator = z
 
 const pincodeValidator = z
   .string()
-  .regex(/^\d{6}$/, "Pincode must be exactly 6 digits (e.g. 422001)")
+  .regex(/^\d{6}$/, "Pincode must be exactly 6 digits (e.g. 411018)")
   .optional()
   .or(z.literal(""));
 
 export const updateFarmerProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters long").max(100).optional(),
   phone: phoneValidator,
+  dob: z.string().max(50, "DOB cannot exceed 50 characters").optional().or(z.literal("")),
+  address: z.string().max(500, "Address cannot exceed 500 characters").optional().or(z.literal("")),
+  idType: z.enum(["AADHAAR", "PAN", "DRIVING_LICENSE"]).optional(),
+  idNumber: z.string().min(4, "ID Number must be at least 4 characters").max(50).optional().or(z.literal("")),
+  avatarUrl: z.string().url("Please provide a valid URL").optional().or(z.literal("")),
   addressLine1: z.string().max(255, "Address Line 1 cannot exceed 255 characters").optional(),
   addressLine2: z.string().max(255, "Address Line 2 cannot exceed 255 characters").optional(),
   village: z.string().max(100, "Village cannot exceed 100 characters").optional(),

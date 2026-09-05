@@ -53,8 +53,13 @@ export interface ApiResponse<T = unknown> {
   code?: string;
 }
 
+import type { FarmerProfileData, UpdateFarmerProfilePayload } from './farmer.interface';
+
 export interface AuthContextType {
   user: FarmerUser | null;
+  farmerProfile: FarmerProfileData | null;
+  farmerCode: string | null;
+  isProfileComplete: boolean;
   token: string | null;
   isLoading: boolean;
   isInitializing: boolean;
@@ -63,6 +68,8 @@ export interface AuthContextType {
   register: (payload: Omit<RegisterPayload, 'role'>) => Promise<boolean>;
   verifyOtp: (payload: VerifyOtpPayload) => Promise<boolean>;
   sendOtp: (payload: SendOtpPayload) => Promise<boolean>;
+  refreshFarmerProfile: () => Promise<void>;
+  updateProfile: (payload: UpdateFarmerProfilePayload) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
 }

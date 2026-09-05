@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Alert, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Alert, BackHandler, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { ThemeColors } from '@/constants/theme';
 import { FloatingBottomNav } from '@/components/navigation/FloatingBottomNav';
+import { ProfileCompletionModal } from '@/components/dashboard/ProfileCompletionModal';
 import {
   DashboardHeader,
   DashboardMainView,
@@ -14,10 +16,21 @@ import {
 import type { NavTabType } from '@/interfaces';
 
 export default function FarmerDashboardScreen() {
-  const { user } = useAuth();
+  const { user, farmerProfile, farmerCode, isProfileComplete } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTabType>('dashboard');
+  const [profileModalVisible, setProfileModalVisible] = useState<boolean>(false);
 
   const farmerName = user?.name || 'Ramesh Kisan';
+
+  // Automatically trigger KYC popup on first load if profile is incomplete
+  useEffect(() => {
+    if (farmerProfile && !isProfileComplete) {
+      const timer = setTimeout(() => {
+        setProfileModalVisible(true);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [farmerProfile, isProfileComplete]);
 
   // Prevent back action from popping back to auth screens
   useEffect(() => {
@@ -32,7 +45,6 @@ export default function FarmerDashboardScreen() {
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
   }, [activeTab]);
-
 
   const getHeaderInfo = useCallback(() => {
     switch (activeTab) {
@@ -68,7 +80,7 @@ export default function FarmerDashboardScreen() {
   const handleNotificationPress = useCallback(() => {
     Alert.alert(
       'Mandi Notifications',
-      '• Onion slot #BK-9402 assay is completed.\n• Tomorrow MSP rates announced for Lasalgaon APMC.',
+      '• Morwadi APMC Sub-Yard daily auction rates updated.\n• Pimpri Chinchwad tomato mandi gates open.',
       [{ text: 'OK' }]
     );
   }, []);
@@ -78,15 +90,41 @@ export default function FarmerDashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.container}>
-        {/* Top Header */}
+        {/* Top Header with Farmer ID & KYC Badges */}
         <DashboardHeader
           title={headerInfo.title}
           subtitle={headerInfo.subtitle}
+          farmerCode={farmerCode}
+          isProfileComplete={isProfileComplete}
+          onKycPress={() => setProfileModalVisible(true)}
           showSearchButton={activeTab === 'dashboard'}
           onSearchPress={handleSearchPress}
           onNotificationPress={handleNotificationPress}
           hasUnreadNotifications={true}
         />
+
+        {/* Persistent Incomplete Profile Warning Banner */}
+        {!isProfileComplete ? (
+          <Pressable
+            onPress={() => setProfileModalVisible(true)}
+            style={({ pressed }) => [styles.kycWarningBanner, pressed && styles.pressed]}>
+            <View style={styles.kycBannerLeft}>
+              <View style={styles.warningIconCircle}>
+                <Ionicons name="alert-circle" size={18} color="#B45309" />
+              </View>
+              <View style={styles.kycBannerTextCol}>
+                <Text style={styles.kycBannerTitle}>Action Required: Complete Profile KYC</Text>
+                <Text style={styles.kycBannerSub}>
+                  Add your address, DOB & ID proof to unlock Mandi slot bookings.
+                </Text>
+              </View>
+            </View>
+            <View style={styles.completePill}>
+              <Text style={styles.completePillText}>Verify</Text>
+              <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
+            </View>
+          </Pressable>
+        ) : null}
 
         {/* Dynamic Section Content */}
         <View style={styles.contentArea}>
@@ -109,6 +147,12 @@ export default function FarmerDashboardScreen() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
+
+        {/* Profile KYC Completion Modal */}
+        <ProfileCompletionModal
+          visible={profileModalVisible}
+          onClose={() => setProfileModalVisible(false)}
+        />
       </View>
     </SafeAreaView>
   );
@@ -125,5 +169,70 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
+  },
+  kycWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  kycBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 8,
+  },
+  warningIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FDE68A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kycBannerTextCol: {
+    flex: 1,
+  },
+  kycBannerTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#92400E',
+  },
+  kycBannerSub: {
+    fontSize: 11,
+    color: '#B45309',
+    marginTop: 1,
+    lineHeight: 14,
+  },
+  completePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D97706',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 4,
+  },
+  completePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
 });

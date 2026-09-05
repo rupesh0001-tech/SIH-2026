@@ -1,6 +1,13 @@
+export type FarmerIdType = 'AADHAAR' | 'PAN' | 'DRIVING_LICENSE';
+
 export interface UpdateFarmerProfileInput {
   name?: string;
   phone?: string;
+  dob?: string;
+  address?: string;
+  idType?: FarmerIdType;
+  idNumber?: string;
+  avatarUrl?: string;
   addressLine1?: string;
   addressLine2?: string;
   village?: string;
@@ -18,6 +25,13 @@ export interface UpdateFarmerProfileInput {
 export interface FarmerProfileData {
   id: string;
   userId: string;
+  farmerCode: string | null;
+  dob: string | null;
+  address: string | null;
+  idType: FarmerIdType | null;
+  idNumber: string | null;
+  avatarUrl: string | null;
+  isProfileComplete: boolean;
   addressLine1: string | null;
   addressLine2: string | null;
   village: string | null;

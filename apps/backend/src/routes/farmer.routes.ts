@@ -3,6 +3,9 @@ import { authenticate, requireRole } from "../middlewares/auth.middleware.js";
 import {
   getFarmerProfileHandler,
   updateFarmerProfileHandler,
+  listApprovedMandisHandler,
+  createFarmerBookingHandler,
+  getFarmerBookingsHandler,
 } from "../controllers/farmer.controller.js";
 import { Role } from "@prisma/client";
 
@@ -11,10 +14,15 @@ const router: Router = Router();
 // Protect all farmer routes with authentication and requireRole(Role.FARMER)
 router.use(authenticate, requireRole(Role.FARMER));
 
-// Profile management routes
+// Profile & KYC management routes
 router.get("/profile", getFarmerProfileHandler);
 router.put("/profile", updateFarmerProfileHandler);
 router.patch("/profile", updateFarmerProfileHandler);
+
+// Mandi listing & Slot Booking
+router.get("/mandis", listApprovedMandisHandler);
+router.get("/bookings", getFarmerBookingsHandler);
+router.post("/bookings", createFarmerBookingHandler);
 
 // Farmer dashboard route
 router.get("/dashboard", (req: Request, res: Response) => {
