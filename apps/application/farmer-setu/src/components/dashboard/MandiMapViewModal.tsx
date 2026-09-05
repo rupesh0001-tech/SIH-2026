@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { memo, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,25 +15,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { MandiFilterModal } from './MandiFilterModal';
+import { OpenStreetMapViewer } from './OpenStreetMapViewer';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { getNearbyMandisForUser, formatDistance } from '@/utils/location.utils';
-import type { MandiItem, MandiFilterCriteria, MapRegion } from '@/interfaces';
-
-// Conditionally require/import react-native-maps
-let MapView: any = null;
-let Marker: any = null;
-let PROVIDER_GOOGLE: any = null;
-let Callout: any = null;
-
-try {
-  const Maps = require('react-native-maps');
-  MapView = Maps.default || Maps.MapView || Maps;
-  Marker = Maps.Marker;
-  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-  Callout = Maps.Callout;
-} catch (e) {
-  // Graceful fallback for non-native / test environments
-}
+import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
 interface MandiMapViewModalProps {
   visible: boolean;
@@ -59,7 +44,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
   mandis: initialMandis,
   onSelectMandi,
 }: MandiMapViewModalProps) {
-  const mapRef = useRef<any>(null);
+  const [recenterCounter, setRecenterCounter] = useState<number>(0);
 
   // User live location hook via expo-location
   const {
@@ -71,7 +56,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
     refreshLocation,
   } = useUserLocation();
 
-  // Dynamic nearby mandis computed around user's location
+  // Dynamic nearby mandis computed around user's live position
   const dynamicMandis = useMemo(() => {
     return getNearbyMandisForUser(userCoords);
   }, [userCoords]);
@@ -128,50 +113,14 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
     return filteredMandis[0] || null;
   }, [selectedMandi, filteredMandis]);
 
-  // Initial region centered on user
-  const initialRegion: MapRegion = useMemo(() => {
-    return {
-      latitude: userCoords.latitude,
-      longitude: userCoords.longitude,
-      latitudeDelta: 0.12,
-      longitudeDelta: 0.12,
-    };
-  }, [userCoords.latitude, userCoords.longitude]);
-
   // Recenter map to user location
   const handleRecenterToUser = useCallback(() => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: userCoords.latitude,
-          longitude: userCoords.longitude,
-          latitudeDelta: 0.08,
-          longitudeDelta: 0.08,
-        },
-        500
-      );
-    }
+    setRecenterCounter((prev) => prev + 1);
     Alert.alert(
       'Location Calibrated',
       `GPS: ${locationName}\nLat: ${userCoords.latitude.toFixed(4)}, Lng: ${userCoords.longitude.toFixed(4)}`
     );
   }, [userCoords, locationName]);
-
-  // Focus map on specific mandi
-  const handleSelectMandiMarker = useCallback((mandi: MandiItem) => {
-    setSelectedMandi(mandi);
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: mandi.latitude,
-          longitude: mandi.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        },
-        400
-      );
-    }
-  }, []);
 
   const handleOpenDirections = useCallback((mandi: MandiItem) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${mandi.latitude},${mandi.longitude}`;
@@ -275,7 +224,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           <View style={styles.statusBannerSuccess}>
             <View style={styles.liveDot} />
             <Text style={styles.statusBannerSuccessText} numberOfLines={1}>
-              {locationName} • {filteredMandis.length} Nearby Mandis / Shops
+              {locationName} • {filteredMandis.length} Nearby Mandis / Shops Found
             </Text>
           </View>
         )}
@@ -316,151 +265,15 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           </View>
         ) : null}
 
-        {/* Map Container: react-native-maps on Native, graceful canvas on Web */}
+        {/* 100% Free OpenStreetMap & Shop Markers View */}
         <View style={styles.mapCanvas}>
-          {MapView && Platform.OS !== 'web' ? (
-            <MapView
-              ref={mapRef}
-              style={StyleSheet.absoluteFill}
-              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-              initialRegion={initialRegion}
-              showsCompass={true}
-              showsScale={true}
-              toolbarEnabled={false}>
-              
-              {/* User Location Marker */}
-              <Marker
-                coordinate={{
-                  latitude: userCoords.latitude,
-                  longitude: userCoords.longitude,
-                }}
-                title="Your Farm / Location"
-                description={locationName}
-                anchor={{ x: 0.5, y: 0.5 }}>
-                <View style={styles.userMarkerOuter}>
-                  <View style={styles.userMarkerPulse} />
-                  <View style={styles.userMarkerCore}>
-                    <Ionicons name="person" size={12} color="#FFFFFF" />
-                  </View>
-                </View>
-              </Marker>
-
-              {/* Nearby Mandi / Shop Markers */}
-              {filteredMandis.map((mandi) => {
-                const isSelected = currentSelectedMandi?.id === mandi.id;
-
-                return (
-                  <Marker
-                    key={mandi.id}
-                    coordinate={{
-                      latitude: mandi.latitude,
-                      longitude: mandi.longitude,
-                    }}
-                    title={mandi.name}
-                    description={`${mandi.topCrop} • ${mandi.modalPrice}`}
-                    onPress={() => handleSelectMandiMarker(mandi)}
-                    anchor={{ x: 0.5, y: 1 }}>
-                    <View style={styles.pinWrapper}>
-                      <View
-                        style={[
-                          styles.pinBadge,
-                          isSelected && styles.pinBadgeSelected,
-                        ]}>
-                        <Ionicons
-                          name="storefront"
-                          size={12}
-                          color={isSelected ? '#FFFFFF' : ThemeColors.primary}
-                        />
-                        <Text
-                          style={[
-                            styles.pinBadgeText,
-                            isSelected && styles.pinBadgeTextSelected,
-                          ]}>
-                          {mandi.modalPrice.split(' ')[0]}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.pinAnchorDot,
-                          isSelected && styles.pinAnchorDotSelected,
-                        ]}
-                      />
-                    </View>
-                  </Marker>
-                );
-              })}
-            </MapView>
-          ) : (
-            /* Web / Fallback Interactive Radar View */
-            <View style={styles.webFallbackContainer}>
-              <View style={styles.gridOverlay}>
-                <View style={[styles.terrainContour, { top: '15%', left: '-10%', width: '120%', height: 180 }]} />
-                <View style={[styles.terrainContour, { top: '55%', right: '-20%', width: '130%', height: 220 }]} />
-                <View style={styles.highwayNorthSouth} />
-                <View style={styles.highwayEastWest} />
-              </View>
-
-              {/* User Live Marker */}
-              <View style={styles.userLocationMarker}>
-                <View style={styles.userPulseRing} />
-                <View style={styles.userDot}>
-                  <Ionicons name="person" size={12} color="#FFFFFF" />
-                </View>
-                <View style={styles.userLabelCard}>
-                  <Text style={styles.userLabelText}>YOU (Live Farm Location)</Text>
-                </View>
-              </View>
-
-              {/* Mandi Markers */}
-              {filteredMandis.map((mandi, idx) => {
-                const isSelected = currentSelectedMandi?.id === mandi.id;
-                const positions = [
-                  { top: '22%', left: '24%' },
-                  { top: '34%', right: '18%' },
-                  { top: '65%', left: '30%' },
-                  { top: '28%', right: '35%' },
-                  { top: '72%', right: '22%' },
-                  { top: '48%', left: '16%' },
-                ];
-                const pos = positions[idx % positions.length];
-
-                return (
-                  <Pressable
-                    key={mandi.id}
-                    onPress={() => handleSelectMandiMarker(mandi)}
-                    style={[
-                      styles.mandiPinContainer,
-                      { top: pos.top as any, left: (pos as any).left, right: (pos as any).right },
-                    ]}>
-                    <View
-                      style={[
-                        styles.pinBadge,
-                        isSelected && styles.pinBadgeSelected,
-                      ]}>
-                      <Ionicons
-                        name="storefront"
-                        size={12}
-                        color={isSelected ? '#FFFFFF' : ThemeColors.primary}
-                      />
-                      <Text
-                        style={[
-                          styles.pinBadgeText,
-                          isSelected && styles.pinBadgeTextSelected,
-                        ]}>
-                        {mandi.modalPrice.split(' ')[0]}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.pinAnchorDot,
-                        isSelected && styles.pinAnchorDotSelected,
-                      ]}
-                    />
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
+          <OpenStreetMapViewer
+            userCoords={userCoords}
+            mandis={filteredMandis}
+            selectedMandiId={currentSelectedMandi?.id || null}
+            onSelectMandi={(mandi) => setSelectedMandi(mandi)}
+            recenterTrigger={recenterCounter}
+          />
 
           {/* Floating Re-center FAB */}
           <Pressable
@@ -471,9 +284,9 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
           {/* Map Status Badge */}
           <View style={styles.mapInfoBadge}>
-            <Ionicons name="compass-outline" size={14} color={ThemeColors.primary} />
+            <Ionicons name="map-outline" size={14} color={ThemeColors.primary} />
             <Text style={styles.mapInfoText}>
-              Google Maps APMC Radar • {filteredMandis.length} Shops Found
+              OpenStreetMap (OSM) • {filteredMandis.length} Shops Live
             </Text>
           </View>
         </View>
@@ -734,165 +547,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     overflow: 'hidden',
-  },
-  webFallbackContainer: {
-    flex: 1,
-    backgroundColor: '#EBF4EC',
-    position: 'relative',
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFill,
-  },
-  terrainContour: {
-    position: 'absolute',
-    borderRadius: 100,
-    backgroundColor: 'rgba(187, 247, 208, 0.45)',
-    borderWidth: 1,
-    borderColor: 'rgba(134, 239, 172, 0.5)',
-  },
-  highwayNorthSouth: {
-    position: 'absolute',
-    left: '48%',
-    top: 0,
-    bottom: 0,
-    width: 10,
-    backgroundColor: '#FED7AA',
-    borderLeftWidth: 1.5,
-    borderRightWidth: 1.5,
-    borderColor: '#FDBA74',
-  },
-  highwayEastWest: {
-    position: 'absolute',
-    top: '46%',
-    left: 0,
-    right: 0,
-    height: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1.5,
-    borderBottomWidth: 1.5,
-    borderColor: '#E5E7EB',
-  },
-
-  // User Marker Pin
-  userMarkerOuter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userMarkerPulse: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(22, 163, 74, 0.25)',
-  },
-  userMarkerCore: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#15803D',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-
-  // Fallback User Pin
-  userLocationMarker: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginLeft: -16,
-    marginTop: -16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  userPulseRing: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(22, 163, 74, 0.25)',
-  },
-  userDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#15803D',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  userLabelCard: {
-    position: 'absolute',
-    top: 28,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  userLabelText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-
-  // Mandi Pins
-  pinWrapper: {
-    alignItems: 'center',
-  },
-  mandiPinContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  pinBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#16A34A',
-    gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  pinBadgeSelected: {
-    backgroundColor: '#16A34A',
-    borderColor: '#15803D',
-    transform: [{ scale: 1.08 }],
-  },
-  pinBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#15803D',
-  },
-  pinBadgeTextSelected: {
-    color: '#FFFFFF',
-  },
-  pinAnchorDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#16A34A',
-    marginTop: 2,
-  },
-  pinAnchorDotSelected: {
-    backgroundColor: '#15803D',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    backgroundColor: '#E8F5E9',
   },
 
   // Map Controls
@@ -908,7 +563,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 4,
     elevation: 4,
     borderWidth: 1,
@@ -927,6 +582,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   mapInfoText: {
     fontSize: 11,
