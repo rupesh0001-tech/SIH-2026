@@ -6,6 +6,7 @@ import userRoutes from "./routes/user.routes.js";
 import farmerRoutes from "./routes/farmer.routes.js";
 import mandiRoutes from "./routes/mandi.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import { uploadRouter } from "./routes/upload.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import { env } from "./config/env.js";
 
@@ -22,8 +23,8 @@ export function createApp(): Express {
       allowedHeaders: ["Content-Type", "Authorization"],
     })
   );
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
   // Health check endpoints
   const healthHandler = (req: express.Request, res: express.Response) => {
@@ -44,6 +45,7 @@ export function createApp(): Express {
   app.use("/api/v1/farmer", farmerRoutes);
   app.use("/api/v1/mandi", mandiRoutes);
   app.use("/api/v1/admin", adminRoutes);
+  app.use("/api/v1/upload", uploadRouter);
 
   // 404 handler
   app.use("*", (req, res) => {

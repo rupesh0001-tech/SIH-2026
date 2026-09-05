@@ -10,6 +10,8 @@ import {
   Platform,
   Alert,
   TextInput,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
@@ -17,6 +19,7 @@ import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { SearchablePickerModal } from '@/components/ui/SearchablePickerModal';
 import { useAuth } from '@/context/AuthContext';
+import { pickImageAndUpload, takePhotoAndUpload } from '@/services/upload.service';
 import type { FarmerIdType, PickerOption } from '@/interfaces';
 
 interface ProfileCompletionModalProps {
@@ -52,15 +55,37 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
   title = 'Complete Farmer KYC Profile',
   subtitle = 'Please provide your address, date of birth, and identity proof to unlock APMC mandi auction booking.',
 }: ProfileCompletionModalProps) {
-  const { farmerProfile, farmerCode, updateProfile, isLoading } = useAuth();
+  const { farmerProfile, farmerCode, updateProfile, isLoading, token } = useAuth();
 
   const [address, setAddress] = useState('');
   const [dob, setDob] = useState('');
   const [idType, setIdType] = useState<FarmerIdType>('AADHAAR');
   const [idNumber, setIdNumber] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [idPickerVisible, setIdPickerVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Handle Photo Picker & ImageKit Upload
+  const handlePickAvatar = useCallback(async (source: 'gallery' | 'camera') => {
+    if (!token) return;
+    try {
+      setIsUploadingImage(true);
+      setErrorMessage(null);
+      const res =
+        source === 'camera'
+          ? await takePhotoAndUpload(token, { folder: 'farmer_avatars' })
+          : await pickImageAndUpload(token, { folder: 'farmer_avatars' });
+
+      if (res && res.url) {
+        setAvatarUrl(res.url);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to upload photo to ImageKit.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }, [token]);
 
   // Prepopulate existing profile values when opened
   useEffect(() => {
@@ -240,20 +265,68 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                 autoCapitalize="characters"
               />
 
-              {/* Profile Photo URL (Optional) */}
-              <AppInput
-                label="Profile Photo URL (Optional)"
-                placeholder="https://example.com/farmer-photo.jpg"
-                value={avatarUrl}
-                onChangeText={setAvatarUrl}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
+              {/* Profile Photo / Avatar with ImageKit Upload */}
+              <View style={styles.avatarSection}>
+                <Text style={styles.inputLabel}>Profile Photo (Stored via ImageKit)</Text>
+                <View style={styles.avatarRow}>
+                  <View style={styles.avatarPreviewBox}>
+                    {avatarUrl ? (
+                      <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                    ) : (
+                      <Ionicons name="person-circle-outline" size={54} color="#9CA3AF" />
+                    )}
+                    {isUploadingImage && (
+                      <View style={styles.uploadingOverlay}>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.avatarActionCol}>
+                    <View style={styles.uploadBtnRow}>
+                      <Pressable
+                        onPress={() => handlePickAvatar('gallery')}
+                        disabled={isUploadingImage}
+                        style={({ pressed }) => [
+                          styles.photoActionBtn,
+                          pressed && styles.pressed,
+                          isUploadingImage && styles.btnDisabled,
+                        ]}>
+                        <Ionicons name="images-outline" size={16} color={ThemeColors.primary} />
+                        <Text style={styles.photoActionBtnText}>Gallery</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => handlePickAvatar('camera')}
+                        disabled={isUploadingImage}
+                        style={({ pressed }) => [
+                          styles.photoActionBtn,
+                          pressed && styles.pressed,
+                          isUploadingImage && styles.btnDisabled,
+                        ]}>
+                        <Ionicons name="camera-outline" size={16} color={ThemeColors.primary} />
+                        <Text style={styles.photoActionBtnText}>Camera</Text>
+                      </Pressable>
+                    </View>
+
+                    {avatarUrl ? (
+                      <Pressable
+                        onPress={() => setAvatarUrl('')}
+                        style={({ pressed }) => [styles.removePhotoBtn, pressed && styles.pressed]}>
+                        <Ionicons name="trash-outline" size={13} color="#EF4444" />
+                        <Text style={styles.removePhotoText}>Remove Photo</Text>
+                      </Pressable>
+                    ) : (
+                      <Text style={styles.photoHintText}>JPG, PNG up to 10MB • Saved to /farmer_avatars</Text>
+                    )}
+                  </View>
+                </View>
+              </View>
 
               <View style={styles.noticeBox}>
                 <Ionicons name="shield-checkmark" size={18} color="#15803D" />
                 <Text style={styles.noticeText}>
-                  Your identity details are encrypted & verified exclusively for transparent APMC mandi gate passes.
+                  Your identity details and images are securely stored via ImageKit & encrypted for transparent APMC mandi gate passes.
                 </Text>
               </View>
             </ScrollView>
@@ -428,6 +501,87 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#111827',
+  },
+  avatarSection: {
+    marginBottom: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 6,
+  },
+  avatarPreviewBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#EEF2F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  uploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarActionCol: {
+    flex: 1,
+    gap: 6,
+  },
+  uploadBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  photoActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: ThemeColors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  photoActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ThemeColors.primary,
+  },
+  removePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  removePhotoText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  photoHintText: {
+    fontSize: 10,
+    color: '#9CA3AF',
+  },
+  btnDisabled: {
+    opacity: 0.5,
   },
   noticeBox: {
     flexDirection: 'row',
