@@ -3,13 +3,14 @@ import { authenticate, requireRole, requireApprovedMandi } from "../middlewares/
 import { validate } from "../middlewares/validate.middleware.js";
 import { Role } from "@prisma/client";
 import * as mandiController from "../controllers/mandi.controller.js";
-import { listApprovedMandisHandler } from "../controllers/farmer.controller.js";
+import { listApprovedMandisHandler, listCommoditiesHandler } from "../controllers/farmer.controller.js";
 import * as mandiSchema from "../schemas/mandi.schema.js";
 
 const router: Router = Router();
 
-// Publicly accessible list of approved mandis
+// Publicly accessible list of approved mandis & commodities
 router.get("/list", listApprovedMandisHandler);
+router.get("/commodities", listCommoditiesHandler);
 
 // Base protection: All Mandi Operator routes require authenticated MANDI_OPERATOR
 router.use(authenticate, requireRole(Role.MANDI_OPERATOR));

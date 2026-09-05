@@ -2,6 +2,61 @@ import { PrismaClient, Role, MandiApprovalStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Official 51 Commodities specified in requirements
+export const OFFICIAL_COMMODITIES = [
+  { name: 'Wheat', category: 'Cereals' },
+  { name: 'Paddy', category: 'Cereals' },
+  { name: 'Maize', category: 'Cereals' },
+  { name: 'Soybean', category: 'Oilseeds' },
+  { name: 'Cotton', category: 'Cash Crops' },
+  { name: 'Mustard', category: 'Oilseeds' },
+  { name: 'Groundnut', category: 'Oilseeds' },
+  { name: 'Chana', category: 'Pulses' },
+  { name: 'Tur', category: 'Pulses' },
+  { name: 'Moong', category: 'Pulses' },
+  { name: 'Urad', category: 'Pulses' },
+  { name: 'Masoor', category: 'Pulses' },
+  { name: 'Bajra', category: 'Cereals' },
+  { name: 'Jowar', category: 'Cereals' },
+  { name: 'Sugarcane', category: 'Cash Crops' },
+  { name: 'Onion', category: 'Vegetables' },
+  { name: 'Potato', category: 'Vegetables' },
+  { name: 'Tomato', category: 'Vegetables' },
+  { name: 'Turmeric', category: 'Spices' },
+  { name: 'Coriander', category: 'Spices' },
+  { name: 'Cumin', category: 'Spices' },
+  { name: 'Garlic', category: 'Spices' },
+  { name: 'Ginger', category: 'Spices' },
+  { name: 'Peas', category: 'Vegetables' },
+  { name: 'Cabbage', category: 'Vegetables' },
+  { name: 'Cauliflower', category: 'Vegetables' },
+  { name: 'Brinjal', category: 'Vegetables' },
+  { name: 'Okra', category: 'Vegetables' },
+  { name: 'Green Chilli', category: 'Vegetables' },
+  { name: 'Capsicum', category: 'Vegetables' },
+  { name: 'Carrot', category: 'Vegetables' },
+  { name: 'Radish', category: 'Vegetables' },
+  { name: 'Mango', category: 'Fruits' },
+  { name: 'Apple', category: 'Fruits' },
+  { name: 'Banana', category: 'Fruits' },
+  { name: 'Grapes', category: 'Fruits' },
+  { name: 'Pomegranate', category: 'Fruits' },
+  { name: 'Orange', category: 'Fruits' },
+  { name: 'Guava', category: 'Fruits' },
+  { name: 'Papaya', category: 'Fruits' },
+  { name: 'Watermelon', category: 'Fruits' },
+  { name: 'Jute', category: 'Cash Crops' },
+  { name: 'Tobacco', category: 'Cash Crops' },
+  { name: 'Coconut', category: 'Plantation' },
+  { name: 'Areca Nut', category: 'Plantation' },
+  { name: 'Sesame', category: 'Oilseeds' },
+  { name: 'Sunflower', category: 'Oilseeds' },
+  { name: 'Castor', category: 'Oilseeds' },
+  { name: 'Barley', category: 'Cereals' },
+  { name: 'Ragi', category: 'Cereals' },
+  { name: 'Chickpea', category: 'Pulses' },
+];
+
 const PIMPRI_PUNE_MANDIS = [
   {
     apmcCode: 'MH-PCMC-001',
@@ -11,7 +66,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6272,
     longitude: 73.8131,
-    topCrop: 'Onion (Red) & Tomato',
+    topCrop: 'Onion, Tomato',
+    acceptedCrops: ['Onion', 'Tomato', 'Green Chilli', 'Wheat', 'Soybean'],
     modalPrice: '₹2,750 / qtl',
     priceTrend: '+₹140 today',
     trendDirection: 'up',
@@ -27,7 +83,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6255,
     longitude: 73.8015,
-    topCrop: 'Wheat (Sharbati) & Soybean',
+    topCrop: 'Wheat, Soybean',
+    acceptedCrops: ['Wheat', 'Soybean', 'Maize', 'Chana', 'Tur'],
     modalPrice: '₹2,890 / qtl',
     priceTrend: '+₹80 today',
     trendDirection: 'up',
@@ -43,7 +100,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6348,
     longitude: 73.7887,
-    topCrop: 'Green Peas & Potato',
+    topCrop: 'Peas, Potato',
+    acceptedCrops: ['Peas', 'Potato', 'Carrot', 'Cabbage', 'Cauliflower'],
     modalPrice: '₹3,200 / qtl',
     priceTrend: '-₹50 today',
     trendDirection: 'down',
@@ -59,7 +117,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6482,
     longitude: 73.7699,
-    topCrop: 'Maize & Bajra',
+    topCrop: 'Maize, Bajra',
+    acceptedCrops: ['Maize', 'Bajra', 'Jowar', 'Ragi', 'Barley'],
     modalPrice: '₹2,420 / qtl',
     priceTrend: '+₹60 today',
     trendDirection: 'up',
@@ -75,7 +134,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6568,
     longitude: 73.7712,
-    topCrop: 'Tomato (Hybrid) & Cauliflower',
+    topCrop: 'Tomato, Cauliflower',
+    acceptedCrops: ['Tomato', 'Cauliflower', 'Cabbage', 'Capsicum', 'Brinjal'],
     modalPrice: '₹2,150 / qtl',
     priceTrend: '+₹110 today',
     trendDirection: 'up',
@@ -91,7 +151,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6186,
     longitude: 73.8446,
-    topCrop: 'Onion (Garva) & Garlic',
+    topCrop: 'Onion, Garlic',
+    acceptedCrops: ['Onion', 'Garlic', 'Ginger', 'Turmeric', 'Coriander'],
     modalPrice: '₹3,450 / qtl',
     priceTrend: '+₹210 today',
     trendDirection: 'up',
@@ -107,7 +168,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.675,
     longitude: 73.848,
-    topCrop: 'Soybean & Groundnut',
+    topCrop: 'Soybean, Groundnut',
+    acceptedCrops: ['Soybean', 'Groundnut', 'Sunflower', 'Mustard', 'Cotton', 'Wheat'],
     modalPrice: '₹4,950 / qtl',
     priceTrend: '+₹175 today',
     trendDirection: 'up',
@@ -123,7 +185,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.7562,
     longitude: 73.8569,
-    topCrop: 'Onion (Export Grade) & Ginger',
+    topCrop: 'Onion, Ginger',
+    acceptedCrops: ['Onion', 'Ginger', 'Garlic', 'Potato', 'Turmeric'],
     modalPrice: '₹3,100 / qtl',
     priceTrend: '+₹250 today',
     trendDirection: 'up',
@@ -139,7 +202,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.7342,
     longitude: 73.6811,
-    topCrop: 'Flowers & Exotic Vegetables',
+    topCrop: 'Capsicum, Tomato',
+    acceptedCrops: ['Capsicum', 'Tomato', 'Cabbage', 'Peas', 'Green Chilli'],
     modalPrice: '₹6,200 / qtl',
     priceTrend: '+₹300 today',
     trendDirection: 'up',
@@ -155,7 +219,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.7189,
     longitude: 73.7225,
-    topCrop: 'Paddy / Rice & Jowar',
+    topCrop: 'Paddy, Jowar',
+    acceptedCrops: ['Paddy', 'Jowar', 'Bajra', 'Wheat', 'Ragi'],
     modalPrice: '₹3,350 / qtl',
     priceTrend: '+₹40 today',
     trendDirection: 'up',
@@ -171,7 +236,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5786,
     longitude: 73.8152,
-    topCrop: 'Leafy Vegetables & Coriander',
+    topCrop: 'Coriander, Radish',
+    acceptedCrops: ['Coriander', 'Radish', 'Carrot', 'Okra', 'Brinjal'],
     modalPrice: '₹1,850 / qtl',
     priceTrend: '-₹20 today',
     trendDirection: 'down',
@@ -187,7 +253,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5987,
     longitude: 73.7885,
-    topCrop: 'Organic Fruits & Vegetables',
+    topCrop: 'Papaya, Guava',
+    acceptedCrops: ['Papaya', 'Guava', 'Banana', 'Mango', 'Pomegranate', 'Tomato'],
     modalPrice: '₹4,100 / qtl',
     priceTrend: '+₹150 today',
     trendDirection: 'up',
@@ -203,7 +270,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5982,
     longitude: 73.7621,
-    topCrop: 'Pomegranate & Grapes',
+    topCrop: 'Pomegranate, Grapes',
+    acceptedCrops: ['Pomegranate', 'Grapes', 'Orange', 'Banana', 'Papaya'],
     modalPrice: '₹5,800 / qtl',
     priceTrend: '+₹320 today',
     trendDirection: 'up',
@@ -219,7 +287,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5912,
     longitude: 73.7389,
-    topCrop: 'Cabbage & Capsicum',
+    topCrop: 'Cabbage, Capsicum',
+    acceptedCrops: ['Cabbage', 'Capsicum', 'Cauliflower', 'Tomato', 'Green Chilli'],
     modalPrice: '₹2,650 / qtl',
     priceTrend: '+₹90 today',
     trendDirection: 'up',
@@ -235,7 +304,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6455,
     longitude: 73.7441,
-    topCrop: 'Wheat & Mustard',
+    topCrop: 'Wheat, Mustard',
+    acceptedCrops: ['Wheat', 'Mustard', 'Chana', 'Groundnut', 'Moong'],
     modalPrice: '₹2,950 / qtl',
     priceTrend: '+₹75 today',
     trendDirection: 'up',
@@ -251,7 +321,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6124,
     longitude: 73.7745,
-    topCrop: 'Brinjal & Lady Finger (Okra)',
+    topCrop: 'Brinjal, Okra',
+    acceptedCrops: ['Brinjal', 'Okra', 'Tomato', 'Cabbage', 'Green Chilli'],
     modalPrice: '₹2,400 / qtl',
     priceTrend: '+₹40 today',
     trendDirection: 'up',
@@ -267,7 +338,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6015,
     longitude: 73.7842,
-    topCrop: 'Cucumber & Gourd',
+    topCrop: 'Green Chilli, Okra',
+    acceptedCrops: ['Green Chilli', 'Okra', 'Brinjal', 'Tomato', 'Coriander'],
     modalPrice: '₹1,950 / qtl',
     priceTrend: '-₹30 today',
     trendDirection: 'down',
@@ -283,7 +355,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.6152,
     longitude: 73.7998,
-    topCrop: 'Onion (Red) & Potato',
+    topCrop: 'Onion, Potato',
+    acceptedCrops: ['Onion', 'Potato', 'Garlic', 'Ginger', 'Tomato'],
     modalPrice: '₹2,720 / qtl',
     priceTrend: '+₹110 today',
     trendDirection: 'up',
@@ -299,7 +372,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5988,
     longitude: 73.8214,
-    topCrop: 'Pulses (Tur Dal, Moong) & Jowar',
+    topCrop: 'Tur, Moong',
+    acceptedCrops: ['Tur', 'Moong', 'Urad', 'Chana', 'Masoor', 'Chickpea', 'Jowar'],
     modalPrice: '₹7,450 / qtl',
     priceTrend: '+₹180 today',
     trendDirection: 'up',
@@ -315,7 +389,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5833,
     longitude: 73.8333,
-    topCrop: 'Banana & Papaya',
+    topCrop: 'Banana, Papaya',
+    acceptedCrops: ['Banana', 'Papaya', 'Watermelon', 'Guava', 'Orange'],
     modalPrice: '₹2,200 / qtl',
     priceTrend: '+₹50 today',
     trendDirection: 'up',
@@ -331,7 +406,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.4975,
     longitude: 73.8683,
-    topCrop: 'Onion, Soybean, Cotton & Grapes',
+    topCrop: 'Onion, Soybean, Cotton, Grapes',
+    acceptedCrops: ['Onion', 'Soybean', 'Cotton', 'Grapes', 'Pomegranate', 'Wheat', 'Tomato', 'Paddy'],
     modalPrice: '₹4,920 / qtl',
     priceTrend: '+₹220 today',
     trendDirection: 'up',
@@ -347,7 +423,8 @@ const PIMPRI_PUNE_MANDIS = [
     state: 'Maharashtra',
     latitude: 18.5638,
     longitude: 73.8467,
-    topCrop: 'Vegetables & Wheat',
+    topCrop: 'Vegetables, Wheat',
+    acceptedCrops: ['Wheat', 'Potato', 'Onion', 'Cabbage', 'Cauliflower', 'Carrot'],
     modalPrice: '₹2,820 / qtl',
     priceTrend: '+₹60 today',
     trendDirection: 'up',
@@ -358,12 +435,28 @@ const PIMPRI_PUNE_MANDIS = [
 ];
 
 async function main() {
-  console.log('🌱 Starting database seeding for Pune & Pimpri-Chinchwad mandis...');
+  console.log('🌱 Starting database seeding for official commodities & Pune/PCMC mandis...');
 
+  // 1. Seed Official 51 Commodities
+  console.log(`📦 Seeding ${OFFICIAL_COMMODITIES.length} official commodities...`);
+  for (const item of OFFICIAL_COMMODITIES) {
+    await prisma.commodity.upsert({
+      where: { name: item.name },
+      update: { category: item.category },
+      create: {
+        name: item.name,
+        category: item.category,
+        defaultUnit: 'kg',
+      },
+    });
+  }
+
+  // 2. Seed Mandis
+  console.log(`🏛️  Seeding ${PIMPRI_PUNE_MANDIS.length} real APMC mandis...`);
   for (const mandi of PIMPRI_PUNE_MANDIS) {
     const operatorEmail = `${mandi.apmcCode.toLowerCase().replace(/-/g, '_')}@farmersetu.in`;
 
-    // 1. Upsert Operator User
+    // 2.1 Upsert Operator User
     const operatorUser = await prisma.user.upsert({
       where: { email: operatorEmail },
       update: {
@@ -374,13 +467,13 @@ async function main() {
       create: {
         email: operatorEmail,
         name: `${mandi.name.split(' ')[0]} Operator`,
-        passwordHash: '$2b$10$epG/2q1/d51v.1iG.hH2.e1vL3p24r.15iT41235123451234512', // standard dev placeholder
+        passwordHash: '$2b$10$epG/2q1/d51v.1iG.hH2.e1vL3p24r.15iT41235123451234512',
         role: Role.MANDI_OPERATOR,
         isVerified: true,
       },
     });
 
-    // 2. Upsert MandiProfile
+    // 2.2 Upsert MandiProfile
     const mandiProfile = await prisma.mandiProfile.upsert({
       where: { userId: operatorUser.id },
       update: {
@@ -392,6 +485,7 @@ async function main() {
         latitude: mandi.latitude,
         longitude: mandi.longitude,
         topCrop: mandi.topCrop,
+        acceptedCrops: mandi.acceptedCrops,
         modalPrice: mandi.modalPrice,
         priceTrend: mandi.priceTrend,
         trendDirection: mandi.trendDirection,
@@ -412,6 +506,7 @@ async function main() {
         latitude: mandi.latitude,
         longitude: mandi.longitude,
         topCrop: mandi.topCrop,
+        acceptedCrops: mandi.acceptedCrops,
         modalPrice: mandi.modalPrice,
         priceTrend: mandi.priceTrend,
         trendDirection: mandi.trendDirection,
@@ -424,13 +519,13 @@ async function main() {
       },
     });
 
-    // 3. Upsert Active Mandi Auction Slots for today and upcoming days
+    // 2.3 Upsert Active Mandi Auction Slots for today and upcoming days
     const todayStr = new Date().toISOString().split('T')[0];
     const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
     const slotData = [
       {
-        crop: mandi.topCrop.split('&')[0].trim(),
+        crop: mandi.acceptedCrops[0] || 'Onion',
         date: todayStr,
         startTime: '07:00',
         endTime: '11:00',
@@ -440,7 +535,7 @@ async function main() {
         bookedFarmers: 12,
       },
       {
-        crop: mandi.topCrop.split('&')[0].trim(),
+        crop: mandi.acceptedCrops[1] || mandi.acceptedCrops[0] || 'Tomato',
         date: todayStr,
         startTime: '11:30',
         endTime: '15:30',
@@ -450,7 +545,7 @@ async function main() {
         bookedFarmers: 10,
       },
       {
-        crop: mandi.topCrop.split('&')[0].trim(),
+        crop: mandi.acceptedCrops[0] || 'Wheat',
         date: tomorrowStr,
         startTime: '07:00',
         endTime: '11:00',
@@ -489,7 +584,7 @@ async function main() {
     }
   }
 
-  console.log(`✅ Successfully seeded ${PIMPRI_PUNE_MANDIS.length} mandis in Pimpri-Chinchwad / Pune / Morwadi cluster with live slots!`);
+  console.log(`✅ Successfully seeded 51 official commodities and ${PIMPRI_PUNE_MANDIS.length} mandis with multi-crop support!`);
 }
 
 main()

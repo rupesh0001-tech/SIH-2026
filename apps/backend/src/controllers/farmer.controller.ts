@@ -5,6 +5,7 @@ import {
   listApprovedMandis,
   createFarmerBooking,
   getFarmerBookings,
+  listOfficialCommodities,
 } from "../services/farmer.service.js";
 import { updateFarmerProfileSchema } from "../schemas/farmer.schema.js";
 
@@ -75,6 +76,26 @@ export async function listApprovedMandisHandler(
 }
 
 /**
+ * Controller to get official commodities: GET /api/v1/farmer/commodities
+ */
+export async function listCommoditiesHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const commodities = await listOfficialCommodities();
+
+    res.status(200).json({
+      success: true,
+      data: { commodities },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Controller to book an arrival slot with KYC completion check: POST /api/v1/farmer/bookings
  */
 export async function createFarmerBookingHandler(
@@ -135,3 +156,4 @@ export async function getFarmerBookingsHandler(
     next(error);
   }
 }
+

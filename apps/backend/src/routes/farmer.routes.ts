@@ -6,6 +6,7 @@ import {
   listApprovedMandisHandler,
   createFarmerBookingHandler,
   getFarmerBookingsHandler,
+  listCommoditiesHandler,
 } from "../controllers/farmer.controller.js";
 import { Role } from "@prisma/client";
 
@@ -19,8 +20,9 @@ router.get("/profile", getFarmerProfileHandler);
 router.put("/profile", updateFarmerProfileHandler);
 router.patch("/profile", updateFarmerProfileHandler);
 
-// Mandi listing & Slot Booking
+// Mandi listing, Commodities & Slot Booking
 router.get("/mandis", listApprovedMandisHandler);
+router.get("/commodities", listCommoditiesHandler);
 router.get("/bookings", getFarmerBookingsHandler);
 router.post("/bookings", createFarmerBookingHandler);
 

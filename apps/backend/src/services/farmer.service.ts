@@ -229,7 +229,8 @@ export async function listApprovedMandis() {
     state: m.state || "Maharashtra",
     latitude: m.latitude || 18.6272,
     longitude: m.longitude || 73.8131,
-    topCrop: m.topCrop || "Onion (Red) & Tomato",
+    topCrop: m.topCrop || "Onion, Tomato",
+    acceptedCrops: m.acceptedCrops && m.acceptedCrops.length > 0 ? m.acceptedCrops : (m.topCrop ? m.topCrop.split(',').map((s) => s.trim()) : ['Onion']),
     modalPrice: m.modalPrice || "₹2,750 / qtl",
     priceTrend: m.priceTrend || "+₹140 today",
     trendDirection: m.trendDirection || "up",
@@ -239,6 +240,15 @@ export async function listApprovedMandis() {
     operatingHours: m.operatingHours,
     slots: m.slots,
   }));
+}
+
+/**
+ * Lists all official standard agricultural commodities from database.
+ */
+export async function listOfficialCommodities() {
+  return prisma.commodity.findMany({
+    orderBy: { name: "asc" },
+  });
 }
 
 /**

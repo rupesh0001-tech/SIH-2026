@@ -8,6 +8,7 @@ interface RecentBookingsListProps {
   bookings: BookingItem[];
   onBookingPress?: (bookingId: string) => void;
   onViewAllPress?: () => void;
+  onExploreMandis?: () => void;
 }
 
 const getStatusBadge = (status: BookingStatus) => {
@@ -44,12 +45,13 @@ export const RecentBookingsList = memo(function RecentBookingsList({
   bookings,
   onBookingPress,
   onViewAllPress,
+  onExploreMandis,
 }: RecentBookingsListProps) {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Bookings</Text>
-        {onViewAllPress ? (
+        {bookings.length > 0 && onViewAllPress ? (
           <Pressable
             onPress={onViewAllPress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -60,54 +62,74 @@ export const RecentBookingsList = memo(function RecentBookingsList({
         ) : null}
       </View>
 
-      {/* Sleek Booking Cards (No heavy progression bars) */}
-      <View style={styles.cardsList}>
-        {bookings.map((booking) => {
-          const statusStyle = getStatusBadge(booking.status);
-
-          return (
+      {/* When no bookings exist, show clean empty state */}
+      {bookings.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="calendar-outline" size={28} color={ThemeColors.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>No Recent Bookings</Text>
+          <Text style={styles.emptySubtitle}>
+            You have not scheduled any APMC mandi arrival passes yet. Explore active yards to book auction gate slots.
+          </Text>
+          {onExploreMandis ? (
             <Pressable
-              key={booking.id}
-              onPress={() => onBookingPress?.(booking.id)}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-              
-              {/* Header: Status pill and Slot Code */}
-              <View style={styles.cardHeader}>
-                <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-                  <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                    {statusStyle.label}
-                  </Text>
-                </View>
-                <Text style={styles.codeText}>#{booking.bookingCode}</Text>
-              </View>
-
-              {/* Crop & Mandi info */}
-              <Text style={styles.cropTitle}>
-                {booking.cropName} ({booking.cropVariety})
-              </Text>
-              <Text style={styles.mandiSubtitle}>
-                {booking.mandiName} • {booking.gateNo}
-              </Text>
-
-              {/* Details footer */}
-              <View style={styles.cardFooter}>
-                <View style={styles.infoCol}>
-                  <Ionicons name="calendar-outline" size={13} color={ThemeColors.textSecondary} />
-                  <Text style={styles.infoText}>{booking.dateString}</Text>
-                </View>
-                <View style={styles.infoCol}>
-                  <Ionicons name="time-outline" size={13} color={ThemeColors.textSecondary} />
-                  <Text style={styles.infoText}>{booking.timeSlot}</Text>
-                </View>
-                <View style={styles.infoCol}>
-                  <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
-                  <Text style={styles.infoText}>{booking.quantityQuintals} Qtl</Text>
-                </View>
-              </View>
+              onPress={onExploreMandis}
+              style={({ pressed }) => [styles.exploreBtn, pressed && styles.pressed]}>
+              <Ionicons name="storefront-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.exploreBtnText}>Explore Mandis & Rates</Text>
             </Pressable>
-          );
-        })}
-      </View>
+          ) : null}
+        </View>
+      ) : (
+        <View style={styles.cardsList}>
+          {bookings.map((booking) => {
+            const statusStyle = getStatusBadge(booking.status);
+
+            return (
+              <Pressable
+                key={booking.id}
+                onPress={() => onBookingPress?.(booking.id)}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+                
+                {/* Header: Status pill and Slot Code */}
+                <View style={styles.cardHeader}>
+                  <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                      {statusStyle.label}
+                    </Text>
+                  </View>
+                  <Text style={styles.codeText}>#{booking.bookingCode}</Text>
+                </View>
+
+                {/* Crop & Mandi info */}
+                <Text style={styles.cropTitle}>
+                  {booking.cropName} ({booking.cropVariety})
+                </Text>
+                <Text style={styles.mandiSubtitle}>
+                  {booking.mandiName} • {booking.gateNo}
+                </Text>
+
+                {/* Details footer */}
+                <View style={styles.cardFooter}>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="calendar-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoText}>{booking.dateString}</Text>
+                  </View>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="time-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoText}>{booking.timeSlot}</Text>
+                  </View>
+                  <View style={styles.infoCol}>
+                    <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
+                    <Text style={styles.infoText}>{booking.quantityQuintals} Qtl</Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 });
@@ -141,7 +163,59 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  emptyIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
+    paddingHorizontal: 12,
+  },
+  exploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: ThemeColors.primary,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  exploreBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   cardsList: {
     gap: 10,

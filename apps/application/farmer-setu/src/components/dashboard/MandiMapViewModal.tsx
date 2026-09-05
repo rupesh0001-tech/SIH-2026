@@ -15,9 +15,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { MandiFilterModal } from './MandiFilterModal';
-import { OpenStreetMapViewer } from './OpenStreetMapViewer';
+import { OpenStreetMapViewer, MapLabelMode } from './OpenStreetMapViewer';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { getNearbyMandisForUser, formatDistance } from '@/utils/location.utils';
+import { formatDistance } from '@/utils/location.utils';
 import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
 interface MandiMapViewModalProps {
@@ -45,6 +45,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
   onSelectMandi,
 }: MandiMapViewModalProps) {
   const [recenterCounter, setRecenterCounter] = useState<number>(0);
+  const [labelMode, setLabelMode] = useState<MapLabelMode>('price');
 
   // User live location hook via expo-location
   const {
@@ -56,19 +57,14 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
     refreshLocation,
   } = useUserLocation();
 
-  // Dynamic nearby mandis computed around user's live position
-  const dynamicMandis = useMemo(() => {
-    return getNearbyMandisForUser(userCoords);
-  }, [userCoords]);
-
   const [selectedMandi, setSelectedMandi] = useState<MandiItem | null>(null);
   const [mapSearch, setMapSearch] = useState('');
   const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
 
-  // Filter Mandis based on search and criteria
+  // Filter Mandis based on search and criteria using real passed mandis
   const filteredMandis = useMemo(() => {
-    return dynamicMandis.filter((m) => {
+    return initialMandis.filter((m) => {
       // 1. Text Search
       if (mapSearch.trim()) {
         const query = mapSearch.toLowerCase();
@@ -103,7 +99,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
       return true;
     });
-  }, [dynamicMandis, mapSearch, criteria]);
+  }, [initialMandis, mapSearch, criteria]);
 
   // Keep selected mandi valid
   const currentSelectedMandi = useMemo(() => {
@@ -165,7 +161,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           <View style={styles.searchBox}>
             <Ionicons name="search" size={16} color={ThemeColors.primary} />
             <TextInput
-              placeholder="Search shops, district or crop..."
+              placeholder="Search mandi, district or crop..."
               placeholderTextColor="#9CA3AF"
               value={mapSearch}
               onChangeText={setMapSearch}
@@ -212,65 +208,59 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           </Pressable>
         </View>
 
-        {/* Location Status Pill */}
-        {locationStatus === 'denied' || locationError ? (
-          <Pressable onPress={refreshLocation} style={styles.statusBannerWarning}>
-            <Ionicons name="warning-outline" size={14} color="#B45309" />
-            <Text style={styles.statusBannerWarningText} numberOfLines={1}>
-              GPS permission denied • Showing standard APMC hub (Tap to retry)
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={styles.statusBannerSuccess}>
-            <View style={styles.liveDot} />
-            <Text style={styles.statusBannerSuccessText} numberOfLines={1}>
-              {locationName} • {filteredMandis.length} Nearby Mandis / Shops Found
-            </Text>
-          </View>
-        )}
+        {/* Location Status & Label Mode Bar */}
+        <View style={styles.statusBarRow}>
+          {locationStatus === 'denied' || locationError ? (
+            <Pressable onPress={refreshLocation} style={styles.statusBannerWarning}>
+              <Ionicons name="warning-outline" size={13} color="#B45309" />
+              <Text style={styles.statusBannerWarningText} numberOfLines={1}>
+                GPS restricted • Showing Pune APMC cluster
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={styles.statusBannerSuccess}>
+              <View style={styles.liveDot} />
+              <Text style={styles.statusBannerSuccessText} numberOfLines={1}>
+                {locationName} • {filteredMandis.length} Mandis
+              </Text>
+            </View>
+          )}
 
-        {/* Active Filter Badges Strip */}
-        {hasActiveFilters ? (
-          <View style={styles.activeFiltersStrip}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterChipScroll}>
-              {criteria.selectedCrop !== 'All Crops' ? (
-                <View style={styles.activePill}>
-                  <Text style={styles.activePillText}>🌾 {criteria.selectedCrop}</Text>
-                </View>
-              ) : null}
-              {criteria.selectedLocation !== 'All Locations' ? (
-                <View style={styles.activePill}>
-                  <Text style={styles.activePillText}>📍 {criteria.selectedLocation}</Text>
-                </View>
-              ) : null}
-              {criteria.manualDate ? (
-                <View style={styles.activePill}>
-                  <Text style={styles.activePillText}>📅 {criteria.manualDate}</Text>
-                </View>
-              ) : null}
-              {criteria.minFarmers ? (
-                <View style={styles.activePill}>
-                  <Text style={styles.activePillText}>👥 {criteria.minFarmers}+ Farmers</Text>
-                </View>
-              ) : null}
-              <Pressable
-                onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                <Text style={styles.clearAllText}>Clear</Text>
-              </Pressable>
-            </ScrollView>
-          </View>
-        ) : null}
+          {/* Map Pin Label Mode Switcher (Price / Name / Crop) */}
+          <View style={styles.labelModePills}>
+            <Pressable
+              onPress={() => setLabelMode('price')}
+              style={[styles.labelPill, labelMode === 'price' && styles.labelPillActive]}>
+              <Text style={[styles.labelPillText, labelMode === 'price' && styles.labelPillTextActive]}>
+                Price
+              </Text>
+            </Pressable>
 
-        {/* 100% Free OpenStreetMap & Shop Markers View */}
+            <Pressable
+              onPress={() => setLabelMode('name')}
+              style={[styles.labelPill, labelMode === 'name' && styles.labelPillActive]}>
+              <Text style={[styles.labelPillText, labelMode === 'name' && styles.labelPillTextActive]}>
+                Name
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setLabelMode('crop')}
+              style={[styles.labelPill, labelMode === 'crop' && styles.labelPillActive]}>
+              <Text style={[styles.labelPillText, labelMode === 'crop' && styles.labelPillTextActive]}>
+                Crop
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* 100% Free OpenStreetMap & Mandi Markers View */}
         <View style={styles.mapCanvas}>
           <OpenStreetMapViewer
             userCoords={userCoords}
             mandis={filteredMandis}
             selectedMandiId={currentSelectedMandi?.id || null}
+            labelMode={labelMode}
             onSelectMandi={(mandi) => setSelectedMandi(mandi)}
             recenterTrigger={recenterCounter}
           />
@@ -286,7 +276,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           <View style={styles.mapInfoBadge}>
             <Ionicons name="map-outline" size={14} color={ThemeColors.primary} />
             <Text style={styles.mapInfoText}>
-              OpenStreetMap (OSM) • {filteredMandis.length} Shops Live
+              OpenStreetMap • {filteredMandis.length} Mandis Live
             </Text>
           </View>
         </View>
@@ -303,7 +293,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   </Text>
                   {currentSelectedMandi.address ? (
                     <Text style={styles.detailAddress} numberOfLines={1}>
-                      📍 {currentSelectedMandi.address}
+                      {currentSelectedMandi.address}
                     </Text>
                   ) : null}
                 </View>
@@ -311,7 +301,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                 <View style={styles.detailPriceBox}>
                   <Text style={styles.detailPrice}>{currentSelectedMandi.modalPrice}</Text>
                   <Text style={styles.detailTrend}>
-                    {currentSelectedMandi.trendDirection === 'up' ? '↑ ' : '↓ '}
+                    {currentSelectedMandi.trendDirection === 'up' ? '+ ' : '- '}
                     {currentSelectedMandi.priceTrend}
                   </Text>
                 </View>
@@ -325,7 +315,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                 <View style={styles.tagPill}>
                   <Ionicons name="people-outline" size={12} color={ThemeColors.primary} />
                   <Text style={styles.tagText}>
-                    {currentSelectedMandi.activeFarmersCount || 85} Farmers
+                    {currentSelectedMandi.activeFarmersCount || 85} in Queue
                   </Text>
                 </View>
                 <View style={styles.tagPill}>
@@ -334,7 +324,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                 </View>
                 <View style={[styles.tagPill, { backgroundColor: '#DCFCE7' }]}>
                   <Ionicons name="checkmark-circle" size={12} color="#15803D" />
-                  <Text style={[styles.tagText, { color: '#15803D' }]}>Gate Open</Text>
+                  <Text style={[styles.tagText, { color: '#15803D' }]}>Open</Text>
                 </View>
               </View>
 
@@ -468,20 +458,29 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     transform: [{ scale: 0.96 }],
   },
-
-  // Location Status Banners
+  statusBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
   statusBannerWarning: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    gap: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    flex: 1,
+    marginRight: 8,
   },
   statusBannerWarningText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: '#B45309',
     flex: 1,
@@ -489,68 +488,51 @@ const styles = StyleSheet.create({
   statusBannerSuccess: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 16,
-    paddingVertical: 5,
     gap: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#A7F3D0',
+    flex: 1,
+    marginRight: 8,
   },
   liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#10B981',
   },
   statusBannerSuccessText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#047857',
     flex: 1,
   },
-
-  // Active Filter Strip
-  activeFiltersStrip: {
-    backgroundColor: '#F8FAFC',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    paddingVertical: 6,
+  labelModePills: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    padding: 2,
+    gap: 2,
   },
-  filterChipScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-    alignItems: 'center',
+  labelPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  activePill: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#86EFAC',
+  labelPillActive: {
+    backgroundColor: '#15803D',
   },
-  activePillText: {
-    fontSize: 11,
+  labelPillText: {
+    fontSize: 10,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#4B5563',
   },
-  clearAllText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#EF4444',
-    marginLeft: 4,
-    textDecorationLine: 'underline',
+  labelPillTextActive: {
+    color: '#FFFFFF',
   },
-
-  // Map Canvas
   mapCanvas: {
     flex: 1,
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#E8F5E9',
   },
-
-  // Map Controls
   floatingGpsFab: {
     position: 'absolute',
     right: 16,
@@ -593,8 +575,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: ThemeColors.textPrimary,
   },
-
-  // Selected Mandi Detail Card
   bottomCardContainer: {
     paddingHorizontal: 16,
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,

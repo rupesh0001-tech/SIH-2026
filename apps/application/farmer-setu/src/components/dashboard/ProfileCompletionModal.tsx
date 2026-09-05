@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  TextInput,
   Image,
   ActivityIndicator,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { AppInput } from '@/components/ui/AppInput';
@@ -48,23 +48,91 @@ const ID_TYPE_OPTIONS: PickerOption[] = [
   },
 ];
 
+const ADDRESS_SUGGESTIONS = [
+  'Sant Tukaram Nagar, Morwadi, Near DY Patil, Pimpri, Pune 411018',
+  'Station Road, Pimpri Gaon, Pimpri Chinchwad 411017',
+  'Old Pune-Mumbai Highway, Chinchwad, Pune 411019',
+  'Sector 7, Bhosari MIDC, Pimpri Chinchwad 411026',
+  'Moshi-Alandi BRTS Corridor, Moshi, PCMC 412105',
+  'Market Yard, Gultekdi, Swargate, Pune 411037',
+];
+
 export const ProfileCompletionModal = memo(function ProfileCompletionModal({
   visible,
   onClose,
   onSuccess,
   title = 'Complete Farmer KYC Profile',
-  subtitle = 'Please provide your address, date of birth, and identity proof to unlock APMC mandi auction booking.',
+  subtitle = 'Please provide your address, pincode, date of birth, and identity proof to unlock APMC mandi auction booking.',
 }: ProfileCompletionModalProps) {
   const { farmerProfile, farmerCode, updateProfile, isLoading, token } = useAuth();
 
   const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
   const [dob, setDob] = useState('');
   const [idType, setIdType] = useState<FarmerIdType>('AADHAAR');
   const [idNumber, setIdNumber] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [idPickerVisible, setIdPickerVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [detectedLocationHint, setDetectedLocationHint] = useState<string | null>(null);
+
+  // Prepopulate existing profile values when opened
+  useEffect(() => {
+    if (visible && farmerProfile) {
+      setAddress(farmerProfile.address || farmerProfile.addressLine1 || '');
+      setPincode(farmerProfile.pincode || '');
+      setDob(farmerProfile.dob || '');
+      if (farmerProfile.idType) {
+        setIdType(farmerProfile.idType);
+      }
+      setIdNumber(farmerProfile.idNumber || '');
+      setAvatarUrl(farmerProfile.avatarUrl || '');
+      setErrorMessage(null);
+      setDetectedLocationHint(null);
+    }
+  }, [visible, farmerProfile]);
+
+  // GPS Auto Location Detection & Reverse Geocoding
+  const handleDetectLocation = useCallback(async () => {
+    try {
+      setIsDetectingLocation(true);
+      setErrorMessage(null);
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMessage('Location permission was denied. Please enter your address and PIN code manually.');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const [geocode] = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+
+      if (geocode) {
+        const street = geocode.street || geocode.name || '';
+        const subregion = geocode.district || geocode.subregion || 'Pimpri-Chinchwad';
+        const city = geocode.city || 'Pune';
+        const state = geocode.region || 'Maharashtra';
+        const postal = geocode.postalCode || '411018';
+
+        const formattedAddress = [street, subregion, city, state].filter(Boolean).join(', ');
+        setAddress(formattedAddress);
+        setPincode(postal);
+        setDetectedLocationHint(`${subregion}, ${city} (${postal})`);
+      }
+    } catch (err: any) {
+      setErrorMessage('Could not determine current location. Please type your address manually.');
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  }, []);
 
   // Handle Photo Picker & ImageKit Upload
   const handlePickAvatar = useCallback(async (source: 'gallery' | 'camera') => {
@@ -87,20 +155,6 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
     }
   }, [token]);
 
-  // Prepopulate existing profile values when opened
-  useEffect(() => {
-    if (visible && farmerProfile) {
-      setAddress(farmerProfile.address || farmerProfile.addressLine1 || '');
-      setDob(farmerProfile.dob || '');
-      if (farmerProfile.idType) {
-        setIdType(farmerProfile.idType);
-      }
-      setIdNumber(farmerProfile.idNumber || '');
-      setAvatarUrl(farmerProfile.avatarUrl || '');
-      setErrorMessage(null);
-    }
-  }, [visible, farmerProfile]);
-
   const selectedIdTypeLabel =
     ID_TYPE_OPTIONS.find((opt) => opt.value === idType)?.label || 'Aadhaar Card';
 
@@ -108,6 +162,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
     setErrorMessage(null);
 
     const cleanAddress = address.trim();
+    const cleanPincode = pincode.trim();
     const cleanDob = dob.trim();
     const cleanIdNumber = idNumber.trim();
 
@@ -142,6 +197,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
     const success = await updateProfile({
       address: cleanAddress,
+      pincode: cleanPincode || undefined,
       dob: cleanDob,
       idType,
       idNumber: cleanIdNumber,
@@ -150,11 +206,11 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
     if (success) {
       Alert.alert(
-        'Profile Completed! 🎉',
-        `Your farmer profile and KYC identity are now verified. Mandi gate booking is unlocked for ${farmerCode || 'your account'}.`,
+        'Profile Completed Successfully',
+        `Your farmer KYC profile is verified. APMC mandi gate bookings are now unlocked for ${farmerCode || 'your account'}.`,
         [
           {
-            text: 'Continue to App',
+            text: 'Continue',
             onPress: () => {
               onClose();
               if (onSuccess) onSuccess();
@@ -165,7 +221,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
     } else {
       setErrorMessage('Failed to save profile. Please check your internet connection and try again.');
     }
-  }, [address, dob, idType, idNumber, avatarUrl, selectedIdTypeLabel, updateProfile, farmerCode, onClose, onSuccess]);
+  }, [address, pincode, dob, idType, idNumber, avatarUrl, selectedIdTypeLabel, updateProfile, farmerCode, onClose, onSuccess]);
 
   return (
     <Modal
@@ -216,9 +272,29 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               keyboardShouldPersistTaps="handled"
               automaticallyAdjustKeyboardInsets={true}>
               
-              {/* Address */}
+              {/* Address Header with Auto-Detect GPS Button */}
+              <View style={styles.addressLabelRow}>
+                <Text style={styles.inputLabel}>Full Farm / Residential Address *</Text>
+                <Pressable
+                  onPress={handleDetectLocation}
+                  disabled={isDetectingLocation}
+                  style={({ pressed }) => [
+                    styles.detectGpsBtn,
+                    pressed && styles.pressed,
+                    isDetectingLocation && styles.btnDisabled,
+                  ]}>
+                  {isDetectingLocation ? (
+                    <ActivityIndicator size="small" color="#15803D" />
+                  ) : (
+                    <Ionicons name="locate" size={13} color="#15803D" />
+                  )}
+                  <Text style={styles.detectGpsBtnText}>
+                    {isDetectingLocation ? 'Detecting...' : 'Detect GPS Location'}
+                  </Text>
+                </Pressable>
+              </View>
+
               <AppInput
-                label="Full Farm / Residential Address *"
                 placeholder="e.g. Gat No. 42, Morwadi Road, Near DY Patil, Pimpri, Pune"
                 value={address}
                 onChangeText={setAddress}
@@ -226,6 +302,58 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                 numberOfLines={2}
                 autoCapitalize="words"
               />
+
+              {/* Detected Location confirmation hint */}
+              {detectedLocationHint ? (
+                <View style={styles.detectedHintBox}>
+                  <Ionicons name="checkmark-circle" size={14} color="#15803D" />
+                  <Text style={styles.detectedHintText}>Detected: {detectedLocationHint}</Text>
+                </View>
+              ) : null}
+
+              {/* Quick Suggestions Strip */}
+              <View style={styles.suggestionsStrip}>
+                <Text style={styles.suggestionTitle}>Quick Suggestions:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionChips}>
+                  {ADDRESS_SUGGESTIONS.map((item, idx) => (
+                    <Pressable
+                      key={idx}
+                      onPress={() => {
+                        setAddress(item);
+                        if (item.includes('411018')) setPincode('411018');
+                        else if (item.includes('411017')) setPincode('411017');
+                        else if (item.includes('411019')) setPincode('411019');
+                        else if (item.includes('411026')) setPincode('411026');
+                        else if (item.includes('412105')) setPincode('412105');
+                        else if (item.includes('411037')) setPincode('411037');
+                      }}
+                      style={({ pressed }) => [styles.suggestionChip, pressed && styles.pressed]}>
+                      <Text style={styles.suggestionChipText} numberOfLines={1}>
+                        {item.split(',')[1]?.trim() || item.split(',')[0]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Pincode & Recommended Mandis */}
+              <AppInput
+                label="Postal PIN Code"
+                placeholder="e.g. 411018"
+                value={pincode}
+                onChangeText={setPincode}
+                keyboardType="numeric"
+                maxLength={6}
+              />
+
+              {pincode.length === 6 ? (
+                <View style={styles.nearbyMandiRecommendBox}>
+                  <Ionicons name="storefront-outline" size={14} color="#15803D" />
+                  <Text style={styles.nearbyMandiRecommendText}>
+                    Nearby Mandis for {pincode}: Morwadi APMC Sub-Yard & Pimpri Central Market
+                  </Text>
+                </View>
+              ) : null}
 
               {/* DOB */}
               <AppInput
@@ -326,7 +454,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               <View style={styles.noticeBox}>
                 <Ionicons name="shield-checkmark" size={18} color="#15803D" />
                 <Text style={styles.noticeText}>
-                  Your identity details and images are securely stored via ImageKit & encrypted for transparent APMC mandi gate passes.
+                  Your identity details and images are securely stored via ImageKit and encrypted for transparent APMC mandi gate passes.
                 </Text>
               </View>
             </ScrollView>
@@ -375,7 +503,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   keyboardAvoid: {
-    maxHeight: '92%',
+    maxHeight: '94%',
   },
   modalCard: {
     backgroundColor: '#FFFFFF',
@@ -470,7 +598,86 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formScroll: {
-    maxHeight: 380,
+    maxHeight: 400,
+  },
+  addressLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  detectGpsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  detectGpsBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  detectedHintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  detectedHintText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  suggestionsStrip: {
+    marginBottom: 12,
+  },
+  suggestionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  suggestionChips: {
+    gap: 6,
+  },
+  suggestionChip: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  suggestionChipText: {
+    fontSize: 11,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  nearbyMandiRecommendBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 12,
+  },
+  nearbyMandiRecommendText: {
+    fontSize: 11,
+    color: '#166534',
+    fontWeight: '600',
+    flex: 1,
   },
   pickerField: {
     marginBottom: 14,

@@ -142,39 +142,6 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
         </View>
       </View>
 
-      {/* Farm Landholdings */}
-      <View style={styles.sectionGroup}>
-        <Text style={styles.groupTitle}>Farm Landholdings</Text>
-        
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="leaf-outline" size={18} color="#059669" />
-            </View>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>Registered Land Parcel</Text>
-              <Text style={styles.rowSubtitle}>
-                {farmerProfile?.landSizeAcres ? `${farmerProfile.landSizeAcres} Acres` : '4.5 Acres'} • Pimpri-Chinchwad, Pune
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={ThemeColors.textMuted} />
-          </View>
-
-          <View style={styles.separator} />
-
-          <View style={styles.row}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="wallet-outline" size={18} color="#2563EB" />
-            </View>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>Direct MSP Bank Account</Text>
-              <Text style={styles.rowSubtitle}>State Bank of India (•• 4892)</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={ThemeColors.textMuted} />
-          </View>
-        </View>
-      </View>
-
       {/* App Preferences */}
       <View style={styles.sectionGroup}>
         <Text style={styles.groupTitle}>Preferences & Language</Text>

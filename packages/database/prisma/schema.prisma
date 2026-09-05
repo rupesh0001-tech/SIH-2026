@@ -180,6 +180,7 @@ model MandiProfile {
   latitude            Float?
   longitude           Float?
   topCrop             String?              // e.g. "Onion (Red) & Grapes"
+  acceptedCrops       String[]             @default([]) // Official commodities accepted at this mandi
   modalPrice          String?              // e.g. "₹2,680 / qtl"
   priceTrend          String?              // e.g. "+₹120 today"
   trendDirection      String?              @default("up")
@@ -207,6 +208,16 @@ model MandiProfile {
   @@index([apmcCode])
   @@index([approvalStatus])
   @@index([district, state])
+}
+
+model Commodity {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?  // e.g. "Cereals", "Pulses", "Vegetables", "Fruits", "Oilseeds", "Spices", "Cash Crops"
+  defaultUnit String   @default("kg")
+  createdAt   DateTime @default(now())
+
+  @@index([name])
 }
 
 model MandiSlot {

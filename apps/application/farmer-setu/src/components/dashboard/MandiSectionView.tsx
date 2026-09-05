@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
@@ -20,7 +21,7 @@ import { getApprovedMandisApi, createFarmerBookingApi } from '@/services/farmer.
 import { getNearbyMandisForUser, calculateDistanceKm, formatDistance } from '@/utils/location.utils';
 import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 4;
 
 const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
   searchQuery: '',
@@ -34,13 +35,14 @@ const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
 };
 
 export const MandiSectionView = memo(function MandiSectionView() {
-  const { token, farmerProfile, isProfileComplete } = useAuth();
+  const { token, isProfileComplete } = useAuth();
   const { coordinates: userCoords, locationName } = useUserLocation();
 
   const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [infoModalMandi, setInfoModalMandi] = useState<MandiItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [dbMandis, setDbMandis] = useState<MandiItem[]>([]);
   const [isLoadingMandis, setIsLoadingMandis] = useState<boolean>(true);
@@ -54,7 +56,6 @@ export const MandiSectionView = memo(function MandiSectionView() {
       try {
         const res = await getApprovedMandisApi(token || undefined);
         if (isMounted && res.success && res.data && res.data.mandis && res.data.mandis.length > 0) {
-          // Calculate distance relative to userCoords
           const formatted = res.data.mandis.map((m) => {
             const distance = calculateDistanceKm(
               userCoords.latitude,
@@ -69,7 +70,6 @@ export const MandiSectionView = memo(function MandiSectionView() {
           });
           setDbMandis(formatted);
         } else {
-          // Fallback to local nearby Pimpri-Pune seeded data
           if (isMounted) {
             setDbMandis(getNearbyMandisForUser(userCoords));
           }
@@ -92,7 +92,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
     };
   }, [token, userCoords]);
 
-  // Recalculate distances when user coordinates change
+  // Recalculate distances dynamically
   const dynamicMandis = useMemo(() => {
     if (dbMandis.length === 0) {
       return getNearbyMandisForUser(userCoords);
@@ -113,23 +113,24 @@ export const MandiSectionView = memo(function MandiSectionView() {
 
   const filteredMandis = useMemo(() => {
     return dynamicMandis.filter((mandi) => {
-      // 1. Text Search query
+      // 1. Text Search
       if (criteria.searchQuery.trim()) {
         const query = criteria.searchQuery.toLowerCase();
         const matchesName = mandi.name.toLowerCase().includes(query);
-        const matchesCrop = mandi.topCrop.toLowerCase().includes(query);
+        const matchesCrop = mandi.topCrop.toLowerCase().includes(query) || (mandi.acceptedCrops && mandi.acceptedCrops.some((c) => c.toLowerCase().includes(query)));
         const matchesDistrict = mandi.district.toLowerCase().includes(query);
         if (!matchesName && !matchesCrop && !matchesDistrict) return false;
       }
 
-      // 2. Crop filter (Preset or manual)
+      // 2. Crop filter
       const targetCrop =
         criteria.manualCrop.trim() ||
         (criteria.selectedCrop !== 'All Crops' ? criteria.selectedCrop : '');
       if (targetCrop) {
-        if (!mandi.topCrop.toLowerCase().includes(targetCrop.toLowerCase())) {
-          return false;
-        }
+        const hasCrop =
+          mandi.topCrop.toLowerCase().includes(targetCrop.toLowerCase()) ||
+          (mandi.acceptedCrops && mandi.acceptedCrops.some((c) => c.toLowerCase().includes(targetCrop.toLowerCase())));
+        if (!hasCrop) return false;
       }
 
       // 3. Location filter
@@ -151,7 +152,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
     });
   }, [dynamicMandis, criteria]);
 
-  // Pagination calculation
+  // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredMandis.length / ITEMS_PER_PAGE));
   const paginatedMandis = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -163,7 +164,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
       // 1. KYC Profile Completion Check (Strict Requirement)
       if (!isProfileComplete) {
         Alert.alert(
-          'KYC Verification Required ⚠️',
+          'KYC Verification Required',
           'You cannot book a mandi auction slot until you complete your profile (Address, DOB, and ID proof).',
           [
             { text: 'Cancel', style: 'cancel' },
@@ -177,7 +178,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
       }
 
       // 2. If profile is complete, create gate pass booking
-      const firstSlot = (mandi as any).slots?.[0];
+      const firstSlot = mandi.slots?.[0];
       const slotId = firstSlot?.id || 'default-slot-1';
 
       if (token) {
@@ -185,28 +186,26 @@ export const MandiSectionView = memo(function MandiSectionView() {
           const res = await createFarmerBookingApi(token, {
             mandiProfileId: mandi.id,
             slotId,
-            crop: mandi.topCrop.split('&')[0].trim(),
+            crop: mandi.acceptedCrops?.[0] || mandi.topCrop.split(',')[0].trim(),
             quantityQuintals: 25,
             vehicleNumber: 'MH 14 TR 4821',
           });
 
           if (res.success && res.data) {
             Alert.alert(
-              'Gate Slot Booked! 🎟️',
-              `Your APMC entry pass for ${mandi.name} is confirmed.\n\nGate Pass Token: ${res.data.booking.token}\nSlot: 07:00 AM - 11:00 AM\nCrop: ${mandi.topCrop.split('&')[0]} (25 Qtl)`,
-              [{ text: 'View in My Bookings' }]
+              'Gate Slot Booked!',
+              `Your APMC entry pass for ${mandi.name} is confirmed.\n\nGate Pass Token: ${res.data.booking.token}\nSlot: 07:00 AM - 11:00 AM\nCrop: ${mandi.acceptedCrops?.[0] || 'Produce'} (25 Qtl)`,
+              [{ text: 'OK' }]
             );
             return;
           }
-        } catch {
-          // Fallback dialog
-        }
+        } catch {}
       }
 
       Alert.alert(
-        'Gate Slot Booked! 🎟️',
-        `Entry pass generated for ${mandi.name}.\n\nPass Code: TKN-${Math.floor(1000 + Math.random() * 9000)}\nEstimated wait: ${mandi.estimatedQueueTime}`,
-        [{ text: 'Done' }]
+        'Gate Slot Booked!',
+        `Entry pass generated for ${mandi.name}.\n\nPass Code: TKN-${Math.floor(1000 + Math.random() * 9000)}\nStatus: Verified for Gate Entry`,
+        [{ text: 'OK' }]
       );
     },
     [isProfileComplete, token]
@@ -276,22 +275,22 @@ export const MandiSectionView = memo(function MandiSectionView() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
             {criteria.manualCrop || criteria.selectedCrop !== 'All Crops' ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>🌾 {criteria.manualCrop || criteria.selectedCrop}</Text>
+                <Text style={styles.activePillText}>{criteria.manualCrop || criteria.selectedCrop}</Text>
               </View>
             ) : null}
             {criteria.manualDate ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>📅 {criteria.manualDate}</Text>
+                <Text style={styles.activePillText}>{criteria.manualDate}</Text>
               </View>
             ) : null}
             {criteria.minFarmers ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>👥 {criteria.minFarmers}+ Farmers</Text>
+                <Text style={styles.activePillText}>{criteria.minFarmers}+ in queue</Text>
               </View>
             ) : null}
             {criteria.selectedLocation !== 'All Locations' ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>📍 {criteria.selectedLocation}</Text>
+                <Text style={styles.activePillText}>{criteria.selectedLocation}</Text>
               </View>
             ) : null}
             <Pressable
@@ -333,83 +332,88 @@ export const MandiSectionView = memo(function MandiSectionView() {
             </Pressable>
           </View>
         ) : (
-          paginatedMandis.map((mandi) => (
-            <View key={mandi.id} style={styles.mandiCard}>
-              {/* Card Header */}
-              <View style={styles.cardHeader}>
-                <View style={styles.mandiTitleRow}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="storefront" size={18} color={ThemeColors.primary} />
-                  </View>
-                  <View style={styles.nameContainer}>
-                    <Text style={styles.mandiName}>{mandi.name}</Text>
-                    <Text style={styles.mandiDistrict}>
-                      {mandi.district} • {formatDistance(mandi.distanceKm)} away
-                    </Text>
-                    {mandi.address ? (
-                      <Text style={styles.mandiAddress} numberOfLines={1}>
-                        📍 {mandi.address}
+          paginatedMandis.map((mandi) => {
+            const cropsList = mandi.acceptedCrops && mandi.acceptedCrops.length > 0
+              ? mandi.acceptedCrops
+              : mandi.topCrop.split(',').map((c) => c.trim());
+            const cropsDisplay = cropsList.slice(0, 3).join(' • ') + (cropsList.length > 3 ? '...' : '');
+
+            return (
+              <View key={mandi.id} style={styles.mandiCard}>
+                {/* 1. Header Row */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.mandiTitleRow}>
+                    <View style={styles.iconCircle}>
+                      <Ionicons name="storefront" size={18} color={ThemeColors.primary} />
+                    </View>
+                    <View style={styles.nameContainer}>
+                      <Text style={styles.mandiName}>{mandi.name}</Text>
+                      <Text style={styles.mandiDistrict}>
+                        {mandi.district} • {formatDistance(mandi.distanceKm)} away
                       </Text>
-                    ) : null}
+                      {mandi.address ? (
+                        <Text style={styles.mandiAddress} numberOfLines={1}>
+                          {mandi.address}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <View style={styles.statusBadge}>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusText}>{mandi.isOpen ? 'Open' : 'Closed'}</Text>
                   </View>
                 </View>
 
-                <View style={styles.statusBadge}>
-                  <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>{mandi.isOpen ? 'Open' : 'Closed'}</Text>
-                </View>
-              </View>
-
-              {/* Card Body Metrics */}
-              <View style={styles.cardBody}>
-                <View style={styles.metricItem}>
-                  <Text style={styles.metricLabel}>Top Commodity</Text>
-                  <Text style={styles.metricValue}>{mandi.topCrop}</Text>
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.metricItemRight}>
-                  <Text style={styles.metricLabel}>Live Modal Price</Text>
-                  <Text style={styles.priceValue}>{mandi.modalPrice}</Text>
-                  <View style={styles.trendRow}>
-                    <Text
-                      style={[
-                        styles.trendText,
-                        { color: mandi.trendDirection === 'up' ? ThemeColors.primary : '#EF4444' },
-                      ]}>
-                      {mandi.trendDirection === 'up' ? '↑ ' : '↓ '}
-                      {mandi.priceTrend}
+                {/* 2. Top Commodities Strip (Moved to TOP of card) */}
+                <View style={styles.topCommodityStrip}>
+                  <View style={styles.topCommodityBadge}>
+                    <Ionicons name="leaf-outline" size={12} color="#15803D" />
+                    <Text style={styles.topCommodityLabel}>Crops:</Text>
+                    <Text style={styles.topCommodityText} numberOfLines={1}>
+                      {cropsDisplay}
                     </Text>
                   </View>
-                  <Text style={styles.queueText}>⏱ {mandi.estimatedQueueTime}</Text>
-                  <Text style={styles.farmerCountText}>👥 {mandi.activeFarmersCount} Farmers in queue</Text>
+                </View>
+
+                {/* 3. Card Body: Right side shows ONLY number in queue and price in EXACT SAME SIZE */}
+                <View style={styles.cardBody}>
+                  <View style={styles.bodyLeftCol}>
+                    <Text style={styles.operatingTimeText}>Hours: {mandi.operatingHours || '05:30 AM - 07:00 PM'}</Text>
+                    <Text style={styles.gateInfoText}>Arrival Slot: Gate 1 & 2</Text>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.bodyRightCol}>
+                    <Text style={styles.uniformMetricText}>
+                      {mandi.activeFarmersCount} in Queue
+                    </Text>
+                    <Text style={styles.uniformMetricText}>
+                      {mandi.modalPrice}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* 4. Action Buttons: "Book Gate Slot" + "Info" (i) option popup */}
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    onPress={() => handleBookSlot(mandi)}
+                    style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
+                    <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.primaryBtnText}>Book Gate Slot</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setInfoModalMandi(mandi)}
+                    style={({ pressed }) => [styles.infoBtn, pressed && styles.pressed]}>
+                    <Ionicons name="information-circle-outline" size={18} color={ThemeColors.primary} />
+                    <Text style={styles.infoBtnText}>Info</Text>
+                  </Pressable>
                 </View>
               </View>
-
-              {/* Action Buttons */}
-              <View style={styles.actionsRow}>
-                <Pressable
-                  onPress={() => handleBookSlot(mandi)}
-                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
-                  <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryBtnText}>Book Gate Slot</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => {
-                    Alert.alert(
-                      'Live APMC Rates',
-                      `Viewing real-time arrival auctions & MSP for ${mandi.name}\nOperating: ${mandi.operatingHours || '06:00 AM - 07:00 PM'}`,
-                      [{ text: 'OK' }]
-                    );
-                  }}
-                  style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}>
-                  <Text style={styles.secondaryBtnText}>Live Rates</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
 
@@ -479,6 +483,84 @@ export const MandiSectionView = memo(function MandiSectionView() {
           setProfileModalVisible(false);
         }}
       />
+
+      {/* Mandi Detailed Info Popup Modal */}
+      {infoModalMandi ? (
+        <Modal
+          visible={Boolean(infoModalMandi)}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setInfoModalMandi(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.infoModalCard}>
+              <View style={styles.infoModalHeader}>
+                <View style={styles.infoModalTitleCol}>
+                  <Text style={styles.infoModalName}>{infoModalMandi.name}</Text>
+                  <Text style={styles.infoModalCode}>APMC Code: {(infoModalMandi as any).apmcCode || 'MH-APMC-001'}</Text>
+                </View>
+                <Pressable
+                  onPress={() => setInfoModalMandi(null)}
+                  style={styles.infoCloseBtn}>
+                  <Ionicons name="close" size={20} color="#6B7280" />
+                </Pressable>
+              </View>
+
+              <ScrollView style={styles.infoScroll} showsVerticalScrollIndicator={false}>
+                {/* Address & Hours */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Location & Timings</Text>
+                  <Text style={styles.infoAddressText}>{infoModalMandi.address || infoModalMandi.district}</Text>
+                  <Text style={styles.infoTimingText}>Operating: {infoModalMandi.operatingHours || '05:30 AM - 07:00 PM (Mon - Sat)'}</Text>
+                </View>
+
+                {/* Accepted Crops & Modal Rates */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Accepted Commodities & Benchmark Rates</Text>
+                  <View style={styles.cropTagsGrid}>
+                    {(infoModalMandi.acceptedCrops || infoModalMandi.topCrop.split(',')).map((crop, idx) => (
+                      <View key={idx} style={styles.cropTagPill}>
+                        <Ionicons name="leaf" size={11} color="#15803D" />
+                        <Text style={styles.cropTagPillText}>{crop.trim()}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.rateHighlightBox}>
+                    <Text style={styles.rateHighlightLabel}>Daily Modal Price:</Text>
+                    <Text style={styles.rateHighlightValue}>{infoModalMandi.modalPrice}</Text>
+                  </View>
+                </View>
+
+                {/* Yard Traffic & Slots */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoSectionTitle}>Arrival Capacity & Queue</Text>
+                  <View style={styles.metricsRow}>
+                    <View style={styles.metricBox}>
+                      <Text style={styles.metricBoxNum}>{infoModalMandi.activeFarmersCount}</Text>
+                      <Text style={styles.metricBoxLabel}>Farmers in Queue</Text>
+                    </View>
+                    <View style={styles.metricBox}>
+                      <Text style={styles.metricBoxNum}>{infoModalMandi.estimatedQueueTime}</Text>
+                      <Text style={styles.metricBoxLabel}>Est. Gate Wait</Text>
+                    </View>
+                  </View>
+                </View>
+              </ScrollView>
+
+              <View style={styles.infoModalFooter}>
+                <Pressable
+                  onPress={() => {
+                    const target = infoModalMandi;
+                    setInfoModalMandi(null);
+                    handleBookSlot(target);
+                  }}
+                  style={styles.infoModalBookBtn}>
+                  <Text style={styles.infoModalBookBtnText}>Book Gate Entry Pass</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </ScrollView>
   );
 });
@@ -652,7 +734,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
-    gap: 12,
+    gap: 10,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -713,64 +795,82 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#15803D',
   },
+
+  // Top Commodity Strip at top of card
+  topCommodityStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  topCommodityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    gap: 5,
+    flex: 1,
+  },
+  topCommodityLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#166534',
+  },
+  topCommodityText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#15803D',
+    flex: 1,
+  },
+
+  // Card Body
   cardBody: {
     flexDirection: 'row',
     backgroundColor: '#F9FAFB',
     borderRadius: 14,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#F3F4F6',
+    alignItems: 'center',
   },
-  metricItem: {
+  bodyLeftCol: {
     flex: 1,
     justifyContent: 'center',
+    gap: 2,
   },
-  metricItemRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+  operatingTimeText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  gateInfoText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   divider: {
     width: 1,
+    height: '100%',
     backgroundColor: '#E5E7EB',
     marginHorizontal: 10,
   },
-  metricLabel: {
-    fontSize: 11,
-    color: ThemeColors.textSecondary,
-    fontWeight: '600',
+  bodyRightCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 3,
   },
-  metricValue: {
+  // Exactly SAME SIZE on right side (Requirement 6)
+  uniformMetricText: {
     fontSize: 13,
     fontWeight: '700',
-    color: ThemeColors.textPrimary,
-    marginTop: 2,
+    color: '#111827',
   },
-  priceValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#15803D',
-    marginTop: 2,
-  },
-  trendRow: {
-    marginTop: 1,
-  },
-  trendText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  queueText: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginTop: 3,
-    fontWeight: '500',
-  },
-  farmerCountText: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginTop: 1,
-    fontWeight: '500',
-  },
+
+  // Action Buttons
   actionsRow: {
     flexDirection: 'row',
     gap: 8,
@@ -778,7 +878,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     flex: 1,
     flexDirection: 'row',
-    height: 38,
+    height: 40,
     backgroundColor: ThemeColors.primary,
     borderRadius: 12,
     alignItems: 'center',
@@ -790,26 +890,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  secondaryBtn: {
-    paddingHorizontal: 14,
-    height: 38,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryBtnText: {
-    color: ThemeColors.textPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  paginationRow: {
+  infoBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    marginTop: 16,
+    paddingHorizontal: 14,
+    height: 40,
+    backgroundColor: '#DCFCE7',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    gap: 4,
+  },
+  infoBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+
+  // Pagination
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 20,
   },
   pageBtn: {
     flexDirection: 'row',
@@ -819,36 +929,186 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EFEFEF',
     gap: 4,
   },
   pageBtnDisabled: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#E5E7EB',
+    opacity: 0.4,
   },
   pageBtnText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: ThemeColors.textPrimary,
   },
   pageTextDisabled: {
     color: '#9CA3AF',
   },
   pageIndicatorPill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
   },
   pageIndicatorText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ThemeColors.textSecondary,
+  },
+
+  // Info Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  infoModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 20,
+    width: '100%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  infoModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    paddingBottom: 12,
+    marginBottom: 12,
+  },
+  infoModalTitleCol: {
+    flex: 1,
+    marginRight: 10,
+  },
+  infoModalName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  infoModalCode: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  infoCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoScroll: {
+    maxHeight: 360,
+  },
+  infoSection: {
+    marginBottom: 16,
+  },
+  infoSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  infoAddressText: {
+    fontSize: 12,
+    color: '#4B5563',
+    lineHeight: 16,
+  },
+  infoTimingText: {
+    fontSize: 12,
+    color: '#059669',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  cropTagsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  cropTagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  cropTagPillText: {
     fontSize: 11,
     fontWeight: '700',
+    color: '#166534',
+  },
+  rateHighlightBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  rateHighlightLabel: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  rateHighlightValue: {
+    fontSize: 14,
+    fontWeight: '800',
     color: '#15803D',
   },
-  pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  metricBoxNum: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  metricBoxLabel: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  infoModalFooter: {
+    marginTop: 14,
+  },
+  infoModalBookBtn: {
+    backgroundColor: ThemeColors.primary,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoModalBookBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

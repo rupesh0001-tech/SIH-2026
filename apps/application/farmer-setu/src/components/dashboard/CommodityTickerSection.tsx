@@ -13,11 +13,11 @@ interface CommodityItem {
 }
 
 const LIVE_COMMODITIES: CommodityItem[] = [
-  { id: '1', name: 'Onion (Red)', mandi: 'Nashik', price: '₹2,680', change: '+4.8%', trend: 'up' },
-  { id: '2', name: 'Soybean (JS-335)', mandi: 'Pune', price: '₹4,920', change: '+3.2%', trend: 'up' },
-  { id: '3', name: 'Cotton (Long)', mandi: 'Nagpur', price: '₹7,150', change: '+1.9%', trend: 'up' },
-  { id: '4', name: 'Wheat (Sharbati)', mandi: 'Lasalgaon', price: '₹2,850', change: '+1.4%', trend: 'up' },
-  { id: '5', name: 'Tomato (Hybrid)', mandi: 'Pimpalgaon', price: '₹1,950', change: '-2.1%', trend: 'down' },
+  { id: '1', name: 'Onion (Red)', mandi: 'Morwadi APMC', price: '₹2,750', change: '+₹140', trend: 'up' },
+  { id: '2', name: 'Soybean', mandi: 'Pimpri Central', price: '₹2,890', change: '+₹80', trend: 'up' },
+  { id: '3', name: 'Wheat (Sharbati)', mandi: 'Gultekdi Market Yard', price: '₹4,920', change: '+₹220', trend: 'up' },
+  { id: '4', name: 'Tomato', mandi: 'Bhosari MIDC', price: '₹3,450', change: '+₹210', trend: 'up' },
+  { id: '5', name: 'Green Peas', mandi: 'Chinchwad Station', price: '₹3,200', change: '-₹50', trend: 'down' },
 ];
 
 export const CommodityTickerSection = memo(function CommodityTickerSection({

@@ -1,3 +1,5 @@
+import type { MandiSlotData } from './farmer.interface';
+
 export type NavTabType = 'dashboard' | 'mandi' | 'bookings' | 'settings';
 
 export type StatColorTheme = 'mint' | 'peach' | 'lavender' | 'softGray';
@@ -52,6 +54,7 @@ export interface MandiItem {
   district: string;
   distanceKm: number;
   topCrop: string;
+  acceptedCrops?: string[];
   modalPrice: string;
   priceTrend: string;
   trendDirection: 'up' | 'down';
@@ -64,6 +67,7 @@ export interface MandiItem {
   activeFarmersCount: number;
   address?: string;
   contactPhone?: string;
+  slots?: MandiSlotData[];
 }
 
 export interface MandiFilterCriteria {
