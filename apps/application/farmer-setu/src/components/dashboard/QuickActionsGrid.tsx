@@ -41,7 +41,7 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
           onPress={onAdvisoryPress}
           style={({ pressed }) => [styles.actionCard, styles.bgLavender, pressed && styles.cardPressed]}>
           <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={18} color={ThemeColors.lavenderDark} />
+            <Ionicons name="sparkles" size={18} color="#0284C7" />
           </View>
           <Text style={styles.actionTitle}>Crop Advisory</Text>
           <Text style={styles.actionSubtitle}>AI Price Predict</Text>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDFDF0',
   },
   bgLavender: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F0F9FF',
   },
   bgPeach: {
     backgroundColor: '#FFF7EB',

@@ -46,7 +46,7 @@ export const AppButton = memo(function AppButton({
       {isLoading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' ? '#F97316' : '#FFFFFF'}
+          color={variant === 'outline' ? '#16A34A' : '#FFFFFF'}
         />
       ) : children ? (
         children
@@ -83,16 +83,16 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   primary: {
-    backgroundColor: '#F97316', // Brand orange
-    shadowColor: '#F97316',
+    backgroundColor: '#16A34A', // Emerald green
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 4,
   },
   accent: {
-    backgroundColor: '#EA580C', // Darker brand orange
-    shadowColor: '#EA580C',
+    backgroundColor: '#15803D', // Deep forest green
+    shadowColor: '#15803D',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#F97316',
+    borderColor: '#16A34A',
   },
   baseText: {
     fontSize: 16,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   outlineText: {
-    color: '#F97316',
+    color: '#16A34A',
   },
   disabledText: {
     color: '#9CA3AF',

@@ -1,10 +1,10 @@
 import { Platform } from 'react-native';
 
 export const ThemeColors = {
-  // Core palette from reference & auth screen
-  lavender: '#F97316',
-  lavenderLight: '#FFEDD5',
-  lavenderDark: '#EA580C',
+  // Core palette - Fresh Agricultural Emerald & Mint Theme
+  lavender: '#16A34A',
+  lavenderLight: '#DCFCE7',
+  lavenderDark: '#15803D',
 
   mint: '#A4F5A6',
   mintLight: '#ECFCEC',
@@ -19,19 +19,19 @@ export const ThemeColors = {
   softGrayLight: '#F6F8FA',
   background: '#F8F9FA',
 
-  // Vibrant Brand Orange Floating Navigation Bar
-  navBg: 'rgba(249, 115, 22, 0.94)',
-  navBorder: 'rgba(255, 255, 255, 0.35)',
+  // Sleek Deep Forest Floating Navigation Bar with frosted glassmorphism
+  navBg: 'rgba(21, 128, 61, 0.94)',
+  navBorder: 'rgba(255, 255, 255, 0.28)',
   navActiveBg: '#FFFFFF',
-  navActiveIcon: '#F97316',
+  navActiveIcon: '#15803D',
   navInactiveIcon: 'rgba(255, 255, 255, 0.90)',
-  darkNav: '#F97316',
+  darkNav: '#15803D',
 
-  // Consistent Brand Action Colors across entire app - Auth Orange Theme
-  primary: '#F97316',
-  primaryHover: '#EA580C',
-  primaryLight: '#FFEDD5',
-  primaryDark: '#C2410C',
+  // Primary Brand Action Colors across entire app
+  primary: '#16A34A',
+  primaryHover: '#15803D',
+  primaryLight: '#DCFCE7',
+  primaryDark: '#166534',
 
   // Text
   textPrimary: '#111827',

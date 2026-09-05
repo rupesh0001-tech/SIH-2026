@@ -82,6 +82,7 @@ export default function FarmerDashboardScreen() {
         <DashboardHeader
           title={headerInfo.title}
           subtitle={headerInfo.subtitle}
+          showSearchButton={activeTab === 'dashboard'}
           onSearchPress={handleSearchPress}
           onNotificationPress={handleNotificationPress}
           hasUnreadNotifications={true}

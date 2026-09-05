@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   heroContainer: {
     width: '100%',
     height: HERO_HEIGHT,
-    backgroundColor: '#F97316',
+    backgroundColor: '#16A34A',
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   badgeContainer: {
-    backgroundColor: '#FFEDD5',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     marginBottom: 12,
   },
   badgeText: {
-    color: '#C2410C',
+    color: '#15803D',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loginBtn: {
-    backgroundColor: '#F97316',
+    backgroundColor: '#16A34A',
     height: 52,
   },
   registerBtn: {
