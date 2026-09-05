@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateCropName } from '@/constants/translations';
 import { SearchablePickerModal } from '@/components/ui/SearchablePickerModal';
 import { CalendarPickerModal } from '@/components/ui/CalendarPickerModal';
 import type { BookingsFilterCriteria, PickerOption } from '@/interfaces';
@@ -23,22 +25,15 @@ interface BookingsFilterModalProps {
 }
 
 const CROP_OPTIONS: PickerOption[] = [
-  { label: 'All Crops', value: 'All Crops', sublabel: 'Show bookings for all produce' },
-  { label: 'Onion (कांदा)', value: 'Onion', sublabel: 'Nashik Red A-Grade / Garva' },
+  { label: 'All Crops (सर्व पिके)', value: 'All Crops', sublabel: 'Show bookings for all produce' },
+  { label: 'Onion (कांदा / प्याज)', value: 'Onion', sublabel: 'Nashik Red A-Grade / Garva' },
   { label: 'Soybean (सोयाबीन)', value: 'Soybean', sublabel: 'JS-335 Organic & Commercial' },
-  { label: 'Cotton (कापूस)', value: 'Cotton', sublabel: 'Long Staple BT Cotton' },
-  { label: 'Wheat (गहू)', value: 'Wheat', sublabel: 'Sharbati Premium' },
-  { label: 'Maize (मका)', value: 'Maize', sublabel: 'Yellow Hybrid Grain' },
-  { label: 'Tomato (टोमॅटो)', value: 'Tomato', sublabel: 'Fresh crate lots' },
-  { label: 'Garlic (लसूण)', value: 'Garlic', sublabel: 'Desi grade' },
-  { label: 'Gram (हरभरा)', value: 'Gram', sublabel: 'Desi Chana' },
-];
-
-const STATUS_LIST = [
-  { id: 'all', label: 'All Status' },
-  { id: 'in_progress', label: 'In Progress' },
-  { id: 'confirmed', label: 'Confirmed' },
-  { id: 'completed', label: 'Completed' },
+  { label: 'Cotton (कापूस / कपास)', value: 'Cotton', sublabel: 'Long Staple BT Cotton' },
+  { label: 'Wheat (गहू / गेहूं)', value: 'Wheat', sublabel: 'Sharbati Premium' },
+  { label: 'Maize (मका / मक्का)', value: 'Maize', sublabel: 'Yellow Hybrid Grain' },
+  { label: 'Tomato (टोमॅटो / टमाटर)', value: 'Tomato', sublabel: 'Fresh crate lots' },
+  { label: 'Garlic (लसूण / लहसुन)', value: 'Garlic', sublabel: 'Desi grade' },
+  { label: 'Gram (हरभरा / चना)', value: 'Gram', sublabel: 'Desi Chana' },
 ];
 
 const STEP_INCREMENT = 50;
@@ -50,6 +45,7 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
   onApply,
   onReset,
 }: BookingsFilterModalProps) {
+  const { language, t } = useLanguage();
   const [selectedCrop, setSelectedCrop] = useState(criteria.selectedCrop || 'All Crops');
   const [manualDate, setManualDate] = useState(criteria.manualDate || '');
   const [status, setStatus] = useState(criteria.status || 'all');
@@ -57,6 +53,13 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
     const parsed = parseInt(criteria.minFarmers, 10);
     return isNaN(parsed) ? 0 : parsed;
   });
+
+  const statusList = [
+    { id: 'all', label: language === 'mr' ? 'सर्व स्थिती' : language === 'hi' ? 'सभी स्थिति' : 'All Status' },
+    { id: 'in_progress', label: t('status.in_progress') },
+    { id: 'confirmed', label: t('status.confirmed') },
+    { id: 'completed', label: t('status.completed') },
+  ];
 
   const [cropPickerVisible, setCropPickerVisible] = useState(false);
   const [calendarPickerVisible, setCalendarPickerVisible] = useState(false);
@@ -104,8 +107,8 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.title}>Filter My Bookings</Text>
-                <Text style={styles.subtitle}>Filter gate passes by crop, date, lots & status</Text>
+                <Text style={styles.title}>{t('filter.bookings_title')}</Text>
+                <Text style={styles.subtitle}>{t('filter.bookings_sub')}</Text>
               </View>
               <Pressable
                 onPress={onClose}
@@ -117,7 +120,7 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
               {/* 1. Crop Filter (Searchable Dropdown) */}
-              <Text style={styles.sectionHeading}>1. Crop / Produce</Text>
+              <Text style={styles.sectionHeading}>{t('filter.crop_heading')}</Text>
               <Pressable
                 onPress={() => setCropPickerVisible(true)}
                 style={styles.dropdownSelector}>
@@ -127,16 +130,16 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
                   </View>
                   <View>
                     <Text style={styles.dropdownValue}>
-                      {selectedCrop === 'All Crops' ? 'All Crops (सर्व पिके)' : selectedCrop}
+                      {selectedCrop === 'All Crops' ? (language === 'mr' ? 'सर्व पिके' : language === 'hi' ? 'सभी फसलें' : 'All Crops') : translateCropName(selectedCrop, language)}
                     </Text>
-                    <Text style={styles.dropdownHint}>Tap to search and select booked crop</Text>
+                    <Text style={styles.dropdownHint}>{t('filter.crop_tap_hint')}</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-down" size={18} color={ThemeColors.textSecondary} />
               </Pressable>
 
               {/* 2. Slot Date Filter (Calendar Picker) */}
-              <Text style={styles.sectionHeading}>2. Slot Booking Date</Text>
+              <Text style={styles.sectionHeading}>{t('filter.date_heading')}</Text>
               <Pressable
                 onPress={() => setCalendarPickerVisible(true)}
                 style={styles.dropdownSelector}>
@@ -146,9 +149,9 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
                   </View>
                   <View>
                     <Text style={styles.dropdownValue}>
-                      {manualDate ? manualDate : 'Any Date (सर्व तारखा)'}
+                      {manualDate ? manualDate : (language === 'mr' ? 'सर्व तारखा' : language === 'hi' ? 'सभी तारीखें' : 'Any Date')}
                     </Text>
-                    <Text style={styles.dropdownHint}>Tap to open calendar picker</Text>
+                    <Text style={styles.dropdownHint}>{t('filter.date_tap_hint')}</Text>
                   </View>
                 </View>
                 {manualDate ? (
@@ -163,14 +166,14 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
               </Pressable>
 
               {/* 3. Quantity Stepper (+ / -) */}
-              <Text style={styles.sectionHeading}>3. Minimum Quantity / Lot Size</Text>
+              <Text style={styles.sectionHeading}>{t('filter.min_quintals')}</Text>
               <View style={styles.stepperContainer}>
                 <View style={styles.stepperLabelCol}>
                   <Text style={styles.stepperValueText}>
-                    {quantityQuintals === 0 ? 'Any Quantity' : `${quantityQuintals}+ Quintals`}
+                    {quantityQuintals === 0 ? (language === 'mr' ? 'कोणतीही मर्यादा नाही' : language === 'hi' ? 'कोई सीमा नहीं' : 'Any Quantity') : `${quantityQuintals}+ ${t('dash.qtl')}`}
                   </Text>
                   <Text style={styles.stepperSubtext}>
-                    {quantityQuintals === 0 ? 'Showing all bookings' : `At least ${quantityQuintals} Quintals lot size`}
+                    {quantityQuintals === 0 ? (language === 'mr' ? 'सर्व बुकिंग्स दर्शवा' : language === 'hi' ? 'सभी बुकिंग देखें' : 'Showing all bookings') : `At least ${quantityQuintals} Quintals lot size`}
                   </Text>
                 </View>
 
@@ -203,9 +206,9 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
               </View>
 
               {/* 4. Slot Status */}
-              <Text style={styles.sectionHeading}>4. Booking Status</Text>
+              <Text style={styles.sectionHeading}>{t('filter.status_heading')}</Text>
               <View style={styles.chipGrid}>
-                {STATUS_LIST.map((s) => {
+                {statusList.map((s) => {
                   const active = status === s.id;
                   return (
                     <Pressable
@@ -224,11 +227,11 @@ export const BookingsFilterModal = memo(function BookingsFilterModal({
             {/* Action Footer */}
             <View style={styles.footer}>
               <Pressable onPress={handleReset} style={styles.resetBtn}>
-                <Text style={styles.resetText}>Reset All</Text>
+                <Text style={styles.resetText}>{t('filter.reset')}</Text>
               </Pressable>
 
               <Pressable onPress={handleApply} style={styles.applyBtn}>
-                <Text style={styles.applyText}>Apply Filters</Text>
+                <Text style={styles.applyText}>{t('filter.apply')}</Text>
               </Pressable>
             </View>
           </View>

@@ -4,6 +4,8 @@ import { StatCardsList } from './StatCardsList';
 import { CommodityTickerSection } from './CommodityTickerSection';
 import { RecentBookingsList } from './RecentBookingsList';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import { getFarmerBookingsApi, getApprovedMandisApi } from '@/services/farmer.service';
 import type { StatCardItem, BookingItem } from '@/interfaces';
 
@@ -17,6 +19,7 @@ export const DashboardMainView = memo(function DashboardMainView({
   onNavigateToMandi,
 }: DashboardMainViewProps) {
   const { token } = useAuth();
+  const { language, t } = useLanguage();
   const [dbBookings, setDbBookings] = useState<any[]>([]);
   const [totalMandisCount, setTotalMandisCount] = useState<number>(22);
 
@@ -54,19 +57,19 @@ export const DashboardMainView = memo(function DashboardMainView({
     return dbBookings.map((b) => ({
       id: b.id,
       bookingCode: b.token || `BK-${b.id.slice(0, 4)}`,
-      cropName: b.crop || 'Agricultural Produce',
+      cropName: translateCropName(b.crop || 'Agricultural Produce', language),
       cropVariety: b.variety || 'Standard APMC Grade',
-      mandiName: b.mandiProfile?.mandiName || 'APMC Yard',
-      gateNo: 'Gate 1',
+      mandiName: translateMandiName(b.mandiProfile?.mandiName || 'APMC Yard', language),
+      gateNo: t('dash.gate_no', { no: 1 }),
       dateString: b.slot?.date || new Date(b.createdAt).toLocaleDateString(),
       timeSlot: `${b.slot?.startTime || '07:00'} - ${b.slot?.endTime || '11:00'}`,
       status: (b.status?.toLowerCase() === 'accepted' ? 'confirmed' : b.status?.toLowerCase() === 'completed' ? 'completed' : 'in_progress') as any,
-      statusLabel: b.status || 'Confirmed',
+      statusLabel: b.status === 'COMPLETED' ? t('status.completed') : b.status === 'ACCEPTED' ? t('status.confirmed') : t('status.in_progress'),
       progressPercent: b.status === 'COMPLETED' ? 100 : b.status === 'VERIFIED' ? 75 : 30,
-      progressLabel: b.status === 'COMPLETED' ? 'Transaction Completed' : b.status === 'VERIFIED' ? 'Gate Verified' : 'Slot Confirmed',
+      progressLabel: b.status === 'COMPLETED' ? t('status.transaction_completed') : b.status === 'VERIFIED' ? t('status.gate_verified') : t('status.slot_confirmed'),
       quantityQuintals: b.quantityQuintals || 0,
     }));
-  }, [dbBookings]);
+  }, [dbBookings, language, t]);
 
   // Calculate Real Metric Counts
   const totalBookingsCount = dbBookings.length;
@@ -83,39 +86,39 @@ export const DashboardMainView = memo(function DashboardMainView({
     return [
       {
         id: 'stat-total-bookings',
-        title: 'Total Bookings',
+        title: t('dash.total_bookings'),
         value: String(totalBookingsCount),
         colorTheme: 'mint',
         iconName: 'calendar-outline',
-        subtitle: totalBookingsCount === 0 ? 'No bookings recorded' : `${totalBookingsCount} total passes`,
+        subtitle: totalBookingsCount === 0 ? t('dash.no_bookings_desc') : t('dash.total_passes', { count: totalBookingsCount }),
       },
       {
         id: 'stat-crop-sold',
-        title: 'Total Crop Sold',
+        title: t('dash.total_crop_sold'),
         value: `${totalKgSold}`,
         unit: 'kg',
         colorTheme: 'peach',
         iconName: 'leaf-outline',
-        subtitle: totalKgSold === 0 ? '0 kg completed' : `${totalKgSold} kg delivered`,
+        subtitle: totalKgSold === 0 ? t('dash.zero_kg') : t('dash.kg_completed', { count: totalKgSold }),
       },
       {
         id: 'stat-total-mandis',
-        title: 'Total Mandis',
+        title: t('dash.total_mandis'),
         value: String(totalMandisCount),
         colorTheme: 'lavender',
         iconName: 'storefront-outline',
-        subtitle: 'Pune & PCMC Cluster',
+        subtitle: t('dash.cluster_name'),
       },
       {
         id: 'stat-active-bookings',
-        title: 'Active Bookings',
+        title: t('dash.active_bookings'),
         value: String(activeBookingsCount),
         colorTheme: 'softGray',
         iconName: 'time-outline',
-        subtitle: activeBookingsCount === 0 ? 'No active slots' : `${activeBookingsCount} active gate slots`,
+        subtitle: activeBookingsCount === 0 ? t('dash.no_active_slots') : t('dash.active_gate_slots', { count: activeBookingsCount }),
       },
     ];
-  }, [totalBookingsCount, totalKgSold, totalMandisCount, activeBookingsCount]);
+  }, [totalBookingsCount, totalKgSold, totalMandisCount, activeBookingsCount, t]);
 
   const handleStatPress = (statId: string) => {
     if (statId === 'stat-total-mandis') {

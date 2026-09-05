@@ -108,7 +108,7 @@ export default function LoginScreen() {
                     });
                   }}
                   style={styles.verifyNowButton}>
-                  <Text style={styles.verifyNowText}>Enter OTP to Verify →</Text>
+                  <Text style={styles.verifyNowText}>{t('auth.verify_now')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -144,19 +144,19 @@ export default function LoginScreen() {
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                   {rememberMe ? <Text style={styles.checkmark}>✓</Text> : null}
                 </View>
-                <Text style={styles.checkboxLabel}>Remember me</Text>
+                <Text style={styles.checkboxLabel}>{t('auth.remember_me')}</Text>
               </Pressable>
 
               <Pressable
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Alert.alert(
-                    'Forgot Password',
-                    'Please contact your APMC mandi helpdesk or reset via web portal.',
+                    t('auth.forgot_alert_title'),
+                    t('auth.forgot_alert_msg'),
                     [{ text: t('general.ok') }]
                   );
                 }}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.forgotText}>{t('auth.forgot_password')}</Text>
               </Pressable>
             </View>
 
@@ -175,7 +175,7 @@ export default function LoginScreen() {
               <Pressable
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => router.push('/(auth)/register')}>
-                <Text style={styles.signUpText}>Sign Up</Text>
+                <Text style={styles.signUpText}>{t('auth.sign_up')}</Text>
               </Pressable>
             </View>
           </View>

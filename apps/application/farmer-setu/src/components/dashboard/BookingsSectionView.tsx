@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { BookingsFilterModal } from './BookingsFilterModal';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import { getFarmerBookingsApi } from '@/services/farmer.service';
 import type { BookingItem, BookingStatus, BookingsFilterCriteria } from '@/interfaces';
 
@@ -24,7 +26,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     cropName: 'Onion',
     cropVariety: 'Nashik Red A-Grade',
     mandiName: 'Morwadi APMC Sub-Yard',
-    gateNo: 'Gate 3 (Bay 12)',
+    gateNo: 'Gate 3',
     dateString: '08/09/2026',
     timeSlot: '08:30 AM – 10:00 AM',
     status: 'in_progress',
@@ -39,8 +41,8 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-8821',
     cropName: 'Soybean',
     cropVariety: 'JS-335 Organic',
-    mandiName: 'Pune Market Yard',
-    gateNo: 'Gate 1 (E-Weighbridge)',
+    mandiName: 'Gultekdi Pune APMC Main Yard',
+    gateNo: 'Gate 1',
     dateString: '12/09/2026',
     timeSlot: '10:30 AM – 12:00 PM',
     status: 'confirmed',
@@ -55,7 +57,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-7612',
     cropName: 'Wheat',
     cropVariety: 'Sharbati Premium',
-    mandiName: 'Pimpri Central Mandi',
+    mandiName: 'Pimpri Central Market Yard',
     gateNo: 'Gate 2',
     dateString: '15/09/2026',
     timeSlot: '02:00 PM – 03:30 PM',
@@ -87,7 +89,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-5520',
     cropName: 'Maize',
     cropVariety: 'Yellow Hybrid',
-    mandiName: 'Bhosari MIDC Yard',
+    mandiName: 'Bhosari Krishi Utpanna Yard',
     gateNo: 'Gate 1',
     dateString: '18/09/2026',
     timeSlot: '11:30 AM – 01:00 PM',
@@ -109,43 +111,44 @@ const INITIAL_BOOKING_CRITERIA: BookingsFilterCriteria = {
   status: 'all',
 };
 
-const getStatusBadge = (status: BookingStatus) => {
-  switch (status) {
-    case 'in_progress':
-      return {
-        bg: '#FFE8C6',
-        text: '#8D4004',
-        label: 'In Progress',
-      };
-    case 'confirmed':
-      return {
-        bg: '#DCFCE7',
-        text: '#15803D',
-        label: 'Confirmed',
-      };
-    case 'completed':
-      return {
-        bg: '#EAECEE',
-        text: '#374151',
-        label: 'Done',
-      };
-    case 'cancelled':
-    default:
-      return {
-        bg: '#FEE2E2',
-        text: '#991B1B',
-        label: 'Cancelled',
-      };
-  }
-};
-
 export const BookingsSectionView = memo(function BookingsSectionView() {
   const { token } = useAuth();
+  const { language, t } = useLanguage();
   const [criteria, setCriteria] = useState<BookingsFilterCriteria>(INITIAL_BOOKING_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [liveBookings, setLiveBookings] = useState<BookingItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const getStatusBadge = (status: BookingStatus) => {
+    switch (status) {
+      case 'in_progress':
+        return {
+          bg: '#FFE8C6',
+          text: '#8D4004',
+          label: t('status.in_progress'),
+        };
+      case 'confirmed':
+        return {
+          bg: '#DCFCE7',
+          text: '#15803D',
+          label: t('status.confirmed'),
+        };
+      case 'completed':
+        return {
+          bg: '#EAECEE',
+          text: '#374151',
+          label: t('status.completed'),
+        };
+      case 'cancelled':
+      default:
+        return {
+          bg: '#FEE2E2',
+          text: '#991B1B',
+          label: t('status.cancelled'),
+        };
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -343,14 +346,18 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
       {/* Status Quick Filter Chips */}
       <View style={styles.statusPillsRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusPillsContent}>
-          {['all', 'in_progress', 'confirmed', 'completed'].map((st) => {
-            const active = criteria.status === st;
-            const label = st === 'all' ? 'All Slots' : st === 'in_progress' ? 'In Progress' : st === 'confirmed' ? 'Confirmed' : 'Completed';
+          {[
+            { key: 'all', label: language === 'mr' ? 'सर्व स्लॉट्स' : language === 'hi' ? 'सभी स्लॉट' : 'All Slots' },
+            { key: 'in_progress', label: t('status.in_progress') },
+            { key: 'confirmed', label: t('status.confirmed') },
+            { key: 'completed', label: t('status.completed') },
+          ].map((st) => {
+            const active = criteria.status === st.key;
             return (
               <Pressable
-                key={st}
+                key={st.key}
                 onPress={() => {
-                  setCriteria((prev) => ({ ...prev, status: st }));
+                  setCriteria((prev) => ({ ...prev, status: st.key as any }));
                   setCurrentPage(1);
                 }}
                 style={[
@@ -362,7 +369,7 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
                     styles.statusChipText,
                     active ? styles.statusChipTextActive : styles.statusChipTextInactive,
                   ]}>
-                  {label}
+                  {st.label}
                 </Text>
               </Pressable>
             );
@@ -370,20 +377,20 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
         </ScrollView>
       </View>
 
-      {/* Cards List (By Default - No Table Toggle) */}
+      {/* Cards List */}
       <View style={styles.cardsList}>
         {paginatedBookings.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="calendar-outline" size={32} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>No bookings found</Text>
-            <Text style={styles.emptySubtitle}>Try changing your search term or filters.</Text>
+            <Text style={styles.emptyTitle}>{t('dash.no_recent_bookings')}</Text>
+            <Text style={styles.emptySubtitle}>{t('dash.no_recent_sub')}</Text>
             <Pressable
               onPress={() => {
                 setCriteria(INITIAL_BOOKING_CRITERIA);
                 setCurrentPage(1);
               }}
               style={styles.resetBtn}>
-              <Text style={styles.resetBtnText}>Reset Filters</Text>
+              <Text style={styles.resetBtnText}>{t('mandi.reset_filters')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -401,10 +408,10 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
                 </View>
 
                 <Text style={styles.cardCropTitle}>
-                  {b.cropName} ({b.cropVariety})
+                  {translateCropName(b.cropName, language)} ({b.cropVariety})
                 </Text>
                 <Text style={styles.cardMandiSubtitle}>
-                  {b.mandiName} • {b.gateNo}
+                  {translateMandiName(b.mandiName, language)} • {b.gateNo}
                 </Text>
 
                 <View style={styles.cardInfoRow}>
@@ -418,12 +425,12 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
                   </View>
                   <View style={styles.infoCol}>
                     <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
-                    <Text style={styles.infoColText}>{b.quantityQuintals} Qtl</Text>
+                    <Text style={styles.infoColText}>{b.quantityQuintals} {t('dash.qtl')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.cardFooterRow}>
-                  <Text style={styles.inspectorText}>Inspector: {b.inspectorName}</Text>
+                  <Text style={styles.inspectorText}>{language === 'mr' ? 'अधिकारी:' : language === 'hi' ? 'अधिकारी:' : 'Officer:'} {b.inspectorName}</Text>
                   <Pressable
                     onPress={() => handleShowQrPass(b)}
                     style={({ pressed }) => [styles.passBtn, pressed && styles.pressed]}>
@@ -449,12 +456,12 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
               size={16}
               color={currentPage <= 1 ? '#9CA3AF' : ThemeColors.textPrimary}
             />
-            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>Prev</Text>
+            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>{t('mandi.prev')}</Text>
           </Pressable>
 
           <View style={styles.pageIndicatorPill}>
             <Text style={styles.pageIndicatorText}>
-              Page {currentPage} of {totalPages}
+              {t('mandi.page_indicator', { page: currentPage, total: totalPages })}
             </Text>
           </View>
 
@@ -462,7 +469,7 @@ export const BookingsSectionView = memo(function BookingsSectionView() {
             disabled={currentPage >= totalPages}
             onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             style={[styles.pageBtn, currentPage >= totalPages && styles.pageBtnDisabled]}>
-            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>Next</Text>
+            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>{t('mandi.next')}</Text>
             <Ionicons
               name="chevron-forward"
               size={16}

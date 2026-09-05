@@ -1,6 +1,8 @@
 import React, { memo, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import type { UserCoordinates, MandiItem } from '@/interfaces';
 
 const MapWebView = WebView as any;
@@ -25,6 +27,7 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
   recenterTrigger,
 }: OpenStreetMapViewerProps) {
   const webViewRef = useRef<any>(null);
+  const { language } = useLanguage();
 
   // Generate self-contained OpenStreetMap + Leaflet HTML
   // Note: selectedMandiId is NOT in the dependencies so WebView NEVER reloads on selection!
@@ -32,12 +35,12 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
     const mandisJson = JSON.stringify(
       mandis.map((m) => ({
         id: m.id,
-        name: m.name,
+        name: translateMandiName(m.name, language),
         district: m.district,
         lat: m.latitude,
         lng: m.longitude,
         price: m.modalPrice,
-        crop: m.topCrop,
+        crop: translateCropName(m.topCrop, language),
         distanceKm: m.distanceKm,
         farmers: m.activeFarmersCount,
       }))

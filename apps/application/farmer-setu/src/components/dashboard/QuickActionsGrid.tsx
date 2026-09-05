@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface QuickActionsGridProps {
   onBookPassPress: () => void;
@@ -12,17 +13,19 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
   onBookPassPress,
   onAdvisoryPress,
 }: QuickActionsGridProps) {
+  const { t } = useLanguage();
+
   const handleLogistics = () => {
-    Alert.alert('Kisan Logistics & Transport', 'Book verified tractor / mini-truck for crop transport to mandi.');
+    Alert.alert(t('quick.book_logistics'), 'Book verified tractor / mini-truck for crop transport to mandi.');
   };
 
   const handleMspCalculator = () => {
-    Alert.alert('MSP & Payout Calculator', 'Calculate your estimated realization based on current Grade & Moisture assay.');
+    Alert.alert(t('quick.msp_calc'), 'Calculate your estimated realization based on current Grade & Moisture assay.');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Farmer Quick Services</Text>
+      <Text style={styles.sectionTitle}>{t('quick.title')}</Text>
 
       <View style={styles.grid}>
         {/* Action 1 */}
@@ -32,8 +35,8 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
           <View style={styles.iconCircle}>
             <Ionicons name="storefront" size={18} color="#15803D" />
           </View>
-          <Text style={styles.actionTitle}>Book Gate Pass</Text>
-          <Text style={styles.actionSubtitle}>APMC Slot</Text>
+          <Text style={styles.actionTitle}>{t('quick.book_pass')}</Text>
+          <Text style={styles.actionSubtitle}>{t('quick.book_pass_sub')}</Text>
         </Pressable>
 
         {/* Action 2 */}
@@ -43,8 +46,8 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
           <View style={styles.iconCircle}>
             <Ionicons name="sparkles" size={18} color="#0284C7" />
           </View>
-          <Text style={styles.actionTitle}>Crop Advisory</Text>
-          <Text style={styles.actionSubtitle}>AI Price Predict</Text>
+          <Text style={styles.actionTitle}>{t('quick.crop_advisory')}</Text>
+          <Text style={styles.actionSubtitle}>{t('quick.crop_advisory_sub')}</Text>
         </Pressable>
 
         {/* Action 3 */}
@@ -54,8 +57,8 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
           <View style={styles.iconCircle}>
             <Ionicons name="car-outline" size={18} color={ThemeColors.peachDark} />
           </View>
-          <Text style={styles.actionTitle}>Book Logistics</Text>
-          <Text style={styles.actionSubtitle}>Tractor & Truck</Text>
+          <Text style={styles.actionTitle}>{t('quick.book_logistics')}</Text>
+          <Text style={styles.actionSubtitle}>{t('quick.book_logistics_sub')}</Text>
         </Pressable>
 
         {/* Action 4 */}
@@ -65,8 +68,8 @@ export const QuickActionsGrid = memo(function QuickActionsGrid({
           <View style={styles.iconCircle}>
             <Ionicons name="calculator-outline" size={18} color="#374151" />
           </View>
-          <Text style={styles.actionTitle}>MSP Calculator</Text>
-          <Text style={styles.actionSubtitle}>Govt Price Check</Text>
+          <Text style={styles.actionTitle}>{t('quick.msp_calc')}</Text>
+          <Text style={styles.actionSubtitle}>{t('quick.msp_calc_sub')}</Text>
         </Pressable>
       </View>
     </View>

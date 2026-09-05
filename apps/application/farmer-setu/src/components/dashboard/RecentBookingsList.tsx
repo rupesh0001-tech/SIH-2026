@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import type { BookingItem, BookingStatus } from '@/interfaces';
 
 interface RecentBookingsListProps {
@@ -11,52 +13,54 @@ interface RecentBookingsListProps {
   onExploreMandis?: () => void;
 }
 
-const getStatusBadge = (status: BookingStatus) => {
-  switch (status) {
-    case 'in_progress':
-      return {
-        bg: '#FFE8C6',
-        text: '#8D4004',
-        label: 'In Progress',
-      };
-    case 'confirmed':
-      return {
-        bg: '#D8F7D9',
-        text: '#1B5E20',
-        label: 'Confirmed',
-      };
-    case 'completed':
-      return {
-        bg: '#EAECEE',
-        text: '#374151',
-        label: 'Done',
-      };
-    case 'cancelled':
-    default:
-      return {
-        bg: '#FEE2E2',
-        text: '#991B1B',
-        label: 'Cancelled',
-      };
-  }
-};
-
 export const RecentBookingsList = memo(function RecentBookingsList({
   bookings,
   onBookingPress,
   onViewAllPress,
   onExploreMandis,
 }: RecentBookingsListProps) {
+  const { language, t } = useLanguage();
+
+  const getStatusBadge = (status: BookingStatus) => {
+    switch (status) {
+      case 'in_progress':
+        return {
+          bg: '#FFE8C6',
+          text: '#8D4004',
+          label: t('status.in_progress'),
+        };
+      case 'confirmed':
+        return {
+          bg: '#D8F7D9',
+          text: '#1B5E20',
+          label: t('status.confirmed'),
+        };
+      case 'completed':
+        return {
+          bg: '#EAECEE',
+          text: '#374151',
+          label: t('status.completed'),
+        };
+      case 'cancelled':
+      default:
+        return {
+          bg: '#FEE2E2',
+          text: '#991B1B',
+          label: t('status.cancelled'),
+        };
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Bookings</Text>
+        <Text style={styles.sectionTitle}>{t('dash.recent_bookings')}</Text>
         {bookings.length > 0 && onViewAllPress ? (
           <Pressable
             onPress={onViewAllPress}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={({ pressed }) => [styles.viewAllBtn, pressed && styles.pressed]}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>{t('dash.view_all')}</Text>
             <Ionicons name="chevron-forward" size={14} color={ThemeColors.textSecondary} />
           </Pressable>
         ) : null}
@@ -68,16 +72,16 @@ export const RecentBookingsList = memo(function RecentBookingsList({
           <View style={styles.emptyIconCircle}>
             <Ionicons name="calendar-outline" size={28} color={ThemeColors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>No Recent Bookings</Text>
+          <Text style={styles.emptyTitle}>{t('dash.no_recent_bookings')}</Text>
           <Text style={styles.emptySubtitle}>
-            You have not scheduled any APMC mandi arrival passes yet. Explore active yards to book auction gate slots.
+            {t('dash.no_recent_sub')}
           </Text>
           {onExploreMandis ? (
             <Pressable
               onPress={onExploreMandis}
               style={({ pressed }) => [styles.exploreBtn, pressed && styles.pressed]}>
               <Ionicons name="storefront-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.exploreBtnText}>Explore Mandis & Rates</Text>
+              <Text style={styles.exploreBtnText}>{t('dash.explore_mandis')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -104,10 +108,10 @@ export const RecentBookingsList = memo(function RecentBookingsList({
 
                 {/* Crop & Mandi info */}
                 <Text style={styles.cropTitle}>
-                  {booking.cropName} ({booking.cropVariety})
+                  {translateCropName(booking.cropName, language)} ({booking.cropVariety})
                 </Text>
                 <Text style={styles.mandiSubtitle}>
-                  {booking.mandiName} • {booking.gateNo}
+                  {translateMandiName(booking.mandiName, language)} • {booking.gateNo}
                 </Text>
 
                 {/* Details footer */}
@@ -122,7 +126,7 @@ export const RecentBookingsList = memo(function RecentBookingsList({
                   </View>
                   <View style={styles.infoCol}>
                     <Ionicons name="cube-outline" size={13} color={ThemeColors.textSecondary} />
-                    <Text style={styles.infoText}>{booking.quantityQuintals} Qtl</Text>
+                    <Text style={styles.infoText}>{booking.quantityQuintals} {t('dash.qtl')}</Text>
                   </View>
                 </View>
               </Pressable>

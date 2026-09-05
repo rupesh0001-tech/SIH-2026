@@ -3,9 +3,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { useLanguage } from '@/context/LanguageContext';
 
 export const WeatherWidget = memo(function WeatherWidget() {
   const { locationName } = useUserLocation();
+  const { t } = useLanguage();
 
   return (
     <View style={styles.container}>
@@ -14,17 +16,17 @@ export const WeatherWidget = memo(function WeatherWidget() {
           <View style={styles.weatherMain}>
             <Ionicons name="sunny" size={24} color="#F59E0B" />
             <View>
-              <Text style={styles.tempText}>28°C • Clear Sky</Text>
-              <Text style={styles.locationText}>{locationName || 'Nashik Mandi Zone'} (Humidity: 48%)</Text>
+              <Text style={styles.tempText}>{t('weather.title')}</Text>
+              <Text style={styles.locationText}>{locationName || 'Nashik Mandi Zone'} ({t('weather.humidity')})</Text>
             </View>
           </View>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Dry & Clear</Text>
+            <Text style={styles.badgeText}>{t('weather.badge')}</Text>
           </View>
         </View>
 
         <Text style={styles.advisoryText}>
-          🌾 Favorable open weather for loading, weighing, and auction unloading at APMC yards today.
+          {t('weather.advisory')}
         </Text>
       </View>
     </View>
