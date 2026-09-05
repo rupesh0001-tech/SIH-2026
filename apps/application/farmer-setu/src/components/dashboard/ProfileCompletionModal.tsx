@@ -19,6 +19,7 @@ import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { SearchablePickerModal } from '@/components/ui/SearchablePickerModal';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { pickImageAndUpload, takePhotoAndUpload } from '@/services/upload.service';
 import type { FarmerIdType, PickerOption } from '@/interfaces';
 
@@ -61,10 +62,14 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
   visible,
   onClose,
   onSuccess,
-  title = 'Complete Farmer KYC Profile',
-  subtitle = 'Please provide your address, pincode, date of birth, and identity proof to unlock APMC mandi auction booking.',
+  title,
+  subtitle,
 }: ProfileCompletionModalProps) {
   const { farmerProfile, farmerCode, updateProfile, isLoading, token } = useAuth();
+  const { t } = useLanguage();
+
+  const modalTitle = title || t('kyc.modal_title');
+  const modalSubtitle = subtitle || t('kyc.modal_subtitle');
 
   const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
@@ -210,7 +215,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
         `Your farmer KYC profile is verified. APMC mandi gate bookings are now unlocked for ${farmerCode || 'your account'}.`,
         [
           {
-            text: 'Continue',
+            text: t('general.continue'),
             onPress: () => {
               onClose();
               if (onSuccess) onSuccess();
@@ -221,7 +226,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
     } else {
       setErrorMessage('Failed to save profile. Please check your internet connection and try again.');
     }
-  }, [address, pincode, dob, idType, idNumber, avatarUrl, selectedIdTypeLabel, updateProfile, farmerCode, onClose, onSuccess]);
+  }, [address, pincode, dob, idType, idNumber, avatarUrl, selectedIdTypeLabel, updateProfile, farmerCode, onClose, onSuccess, t]);
 
   return (
     <Modal
@@ -242,11 +247,11 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                     <Text style={styles.farmerIdText}>{farmerCode || 'FAR001'}</Text>
                   </View>
                   <View style={styles.kycTag}>
-                    <Text style={styles.kycTagText}>KYC Required</Text>
+                    <Text style={styles.kycTagText}>KYC</Text>
                   </View>
                 </View>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
+                <Text style={styles.title}>{modalTitle}</Text>
+                <Text style={styles.subtitle}>{modalSubtitle}</Text>
               </View>
 
               <Pressable
@@ -274,7 +279,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               
               {/* Address Header with Auto-Detect GPS Button */}
               <View style={styles.addressLabelRow}>
-                <Text style={styles.inputLabel}>Full Farm / Residential Address *</Text>
+                <Text style={styles.inputLabel}>{t('kyc.address_label')}</Text>
                 <Pressable
                   onPress={handleDetectLocation}
                   disabled={isDetectingLocation}
@@ -289,7 +294,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                     <Ionicons name="locate" size={13} color="#15803D" />
                   )}
                   <Text style={styles.detectGpsBtnText}>
-                    {isDetectingLocation ? 'Detecting...' : 'Detect GPS Location'}
+                    {isDetectingLocation ? t('kyc.detecting') : t('kyc.detect_gps')}
                   </Text>
                 </Pressable>
               </View>
@@ -307,13 +312,13 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               {detectedLocationHint ? (
                 <View style={styles.detectedHintBox}>
                   <Ionicons name="checkmark-circle" size={14} color="#15803D" />
-                  <Text style={styles.detectedHintText}>Detected: {detectedLocationHint}</Text>
+                  <Text style={styles.detectedHintText}>{t('kyc.detected')} {detectedLocationHint}</Text>
                 </View>
               ) : null}
 
               {/* Quick Suggestions Strip */}
               <View style={styles.suggestionsStrip}>
-                <Text style={styles.suggestionTitle}>Quick Suggestions:</Text>
+                <Text style={styles.suggestionTitle}>{t('kyc.quick_suggestions')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionChips}>
                   {ADDRESS_SUGGESTIONS.map((item, idx) => (
                     <Pressable
@@ -338,8 +343,8 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
               {/* Pincode & Recommended Mandis */}
               <AppInput
-                label="Postal PIN Code"
-                placeholder="e.g. 411018"
+                label={t('kyc.pincode_label')}
+                placeholder={t('kyc.pincode_placeholder')}
                 value={pincode}
                 onChangeText={setPincode}
                 keyboardType="numeric"
@@ -350,15 +355,15 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                 <View style={styles.nearbyMandiRecommendBox}>
                   <Ionicons name="storefront-outline" size={14} color="#15803D" />
                   <Text style={styles.nearbyMandiRecommendText}>
-                    Nearby Mandis for {pincode}: Morwadi APMC Sub-Yard & Pimpri Central Market
+                    {t('kyc.nearby_mandis_for', { pin: pincode })}
                   </Text>
                 </View>
               ) : null}
 
               {/* DOB */}
               <AppInput
-                label="Date of Birth (DOB) *"
-                placeholder="e.g. 1988-04-22 (YYYY-MM-DD)"
+                label={t('kyc.dob_label')}
+                placeholder="YYYY-MM-DD"
                 value={dob}
                 onChangeText={setDob}
                 keyboardType="numbers-and-punctuation"
@@ -366,7 +371,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
               {/* ID Type Selector */}
               <View style={styles.pickerField}>
-                <Text style={styles.inputLabel}>Select Government ID Proof *</Text>
+                <Text style={styles.inputLabel}>{t('kyc.select_id_type')}</Text>
                 <Pressable
                   onPress={() => setIdPickerVisible(true)}
                   style={styles.pickerTrigger}>
@@ -380,7 +385,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
               {/* ID Number */}
               <AppInput
-                label={`${selectedIdTypeLabel} Number *`}
+                label={t('kyc.id_number', { type: selectedIdTypeLabel })}
                 placeholder={
                   idType === 'AADHAAR'
                     ? 'e.g. 1234 5678 9012'
@@ -395,7 +400,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
 
               {/* Profile Photo / Avatar with ImageKit Upload */}
               <View style={styles.avatarSection}>
-                <Text style={styles.inputLabel}>Profile Photo (Stored via ImageKit)</Text>
+                <Text style={styles.inputLabel}>{t('kyc.profile_photo')}</Text>
                 <View style={styles.avatarRow}>
                   <View style={styles.avatarPreviewBox}>
                     {avatarUrl ? (
@@ -421,7 +426,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                           isUploadingImage && styles.btnDisabled,
                         ]}>
                         <Ionicons name="images-outline" size={16} color={ThemeColors.primary} />
-                        <Text style={styles.photoActionBtnText}>Gallery</Text>
+                        <Text style={styles.photoActionBtnText}>{t('kyc.gallery')}</Text>
                       </Pressable>
 
                       <Pressable
@@ -433,7 +438,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                           isUploadingImage && styles.btnDisabled,
                         ]}>
                         <Ionicons name="camera-outline" size={16} color={ThemeColors.primary} />
-                        <Text style={styles.photoActionBtnText}>Camera</Text>
+                        <Text style={styles.photoActionBtnText}>{t('kyc.camera')}</Text>
                       </Pressable>
                     </View>
 
@@ -442,10 +447,10 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
                         onPress={() => setAvatarUrl('')}
                         style={({ pressed }) => [styles.removePhotoBtn, pressed && styles.pressed]}>
                         <Ionicons name="trash-outline" size={13} color="#EF4444" />
-                        <Text style={styles.removePhotoText}>Remove Photo</Text>
+                        <Text style={styles.removePhotoText}>{t('kyc.remove_photo')}</Text>
                       </Pressable>
                     ) : (
-                      <Text style={styles.photoHintText}>JPG, PNG up to 10MB • Saved to /farmer_avatars</Text>
+                      <Text style={styles.photoHintText}>JPG, PNG • /farmer_avatars</Text>
                     )}
                   </View>
                 </View>
@@ -454,7 +459,7 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               <View style={styles.noticeBox}>
                 <Ionicons name="shield-checkmark" size={18} color="#15803D" />
                 <Text style={styles.noticeText}>
-                  Your identity details and images are securely stored via ImageKit and encrypted for transparent APMC mandi gate passes.
+                  {t('kyc.security_notice')}
                 </Text>
               </View>
             </ScrollView>
@@ -464,11 +469,11 @@ export const ProfileCompletionModal = memo(function ProfileCompletionModal({
               <Pressable
                 onPress={onClose}
                 style={({ pressed }) => [styles.cancelBtn, pressed && styles.pressed]}>
-                <Text style={styles.cancelBtnText}>Later</Text>
+                <Text style={styles.cancelBtnText}>{t('kyc.later_btn')}</Text>
               </Pressable>
 
               <AppButton
-                title="Save & Complete KYC"
+                title={t('kyc.save_btn')}
                 onPress={handleSubmit}
                 isLoading={isLoading}
                 variant="primary"

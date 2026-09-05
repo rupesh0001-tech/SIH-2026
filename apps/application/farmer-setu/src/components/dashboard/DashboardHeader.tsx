@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DashboardHeaderProps {
   title: string;
@@ -26,6 +27,8 @@ export const DashboardHeader = memo(function DashboardHeader({
   onNotificationPress,
   hasUnreadNotifications = true,
 }: DashboardHeaderProps) {
+  const { t } = useLanguage();
+
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
@@ -39,12 +42,12 @@ export const DashboardHeader = memo(function DashboardHeader({
                 onPress={onKycPress}
                 style={({ pressed }) => [styles.kycPendingPill, pressed && styles.buttonPressed]}>
                 <Ionicons name="warning" size={11} color="#B45309" />
-                <Text style={styles.kycPendingText}>KYC Incomplete</Text>
+                <Text style={styles.kycPendingText}>{t('kyc.incomplete')}</Text>
               </Pressable>
             ) : (
               <View style={styles.kycVerifiedPill}>
                 <Ionicons name="checkmark-circle" size={11} color="#15803D" />
-                <Text style={styles.kycVerifiedText}>Verified</Text>
+                <Text style={styles.kycVerifiedText}>{t('kyc.verified')}</Text>
               </View>
             )}
           </View>

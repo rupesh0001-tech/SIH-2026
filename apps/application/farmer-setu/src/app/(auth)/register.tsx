@@ -12,13 +12,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { BackButton } from '@/components/ui/BackButton';
+import { LanguageSelectorPill } from '@/components/ui/LanguageSelectorPill';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, isLoading, error, clearError } = useAuth();
+  const { t } = useLanguage();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -138,13 +141,14 @@ export default function RegisterScreen() {
           {/* Top Bar with Safe Inset */}
           <View style={styles.topBar}>
             <BackButton onPress={() => router.back()} />
+            <LanguageSelectorPill />
           </View>
 
           {/* Heading */}
           <View style={styles.headerSection}>
-            <Text style={styles.title}>Let's go! Register in seconds.</Text>
+            <Text style={styles.title}>{t('auth.register_title')}</Text>
             <Text style={styles.subtitle}>
-              Create your Farmer profile to access transparent APMC mandi auctions.
+              {t('auth.register_subtitle')}
             </Text>
           </View>
 
@@ -155,12 +159,11 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-
           {/* Form */}
           <View style={styles.formSection}>
             <AppInput
-              label="Farmer Full Name"
-              placeholder="e.g. Ramesh Kisan"
+              label={t('auth.name_label')}
+              placeholder={t('auth.name_placeholder')}
               value={name}
               onChangeText={handleNameChange}
               autoCapitalize="words"
@@ -168,8 +171,8 @@ export default function RegisterScreen() {
             />
 
             <AppInput
-              label="Mobile Phone Number"
-              placeholder="e.g. 9876543210"
+              label={t('auth.phone_label')}
+              placeholder={t('auth.phone_placeholder')}
               value={phone}
               onChangeText={handlePhoneChange}
               keyboardType="phone-pad"
@@ -177,8 +180,8 @@ export default function RegisterScreen() {
             />
 
             <AppInput
-              label="Email Address"
-              placeholder="e.g. ramesh@kisan.com"
+              label={t('auth.email_label')}
+              placeholder={t('auth.email_placeholder')}
               value={email}
               onChangeText={handleEmailChange}
               autoCapitalize="none"
@@ -187,8 +190,8 @@ export default function RegisterScreen() {
             />
 
             <AppInput
-              label="Password"
-              placeholder="Min 8 chars (at least 1 letter & 1 number)"
+              label={t('auth.password_label')}
+              placeholder={t('auth.password_placeholder')}
               value={password}
               onChangeText={handlePasswordChange}
               isPassword
@@ -196,8 +199,8 @@ export default function RegisterScreen() {
             />
 
             <AppInput
-              label="Confirm Password"
-              placeholder="Re-enter your password"
+              label={t('auth.password_label')}
+              placeholder={t('auth.password_placeholder')}
               value={confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               isPassword
@@ -206,7 +209,7 @@ export default function RegisterScreen() {
 
             {/* CTA */}
             <AppButton
-              title="Register as Farmer"
+              title={t('auth.register_btn')}
               onPress={handleRegister}
               isLoading={isLoading}
               variant="primary"
@@ -215,11 +218,10 @@ export default function RegisterScreen() {
 
             {/* Footer */}
             <View style={styles.footerRow}>
-              <Text style={styles.footerText}>Already have an account? </Text>
               <Pressable
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => router.push('/(auth)/login')}>
-                <Text style={styles.loginLinkText}>Log in</Text>
+                <Text style={styles.loginLinkText}>{t('auth.have_account')}</Text>
               </Pressable>
             </View>
           </View>
@@ -248,6 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerSection: {
     marginBottom: 14,

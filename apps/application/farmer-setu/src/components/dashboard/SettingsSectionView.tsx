@@ -3,20 +3,21 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from 'expo-router';
 import { ProfileCompletionModal } from './ProfileCompletionModal';
 
 export const SettingsSectionView = memo(function SettingsSectionView() {
   const { user, farmerProfile, farmerCode, isProfileComplete, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
-  const [selectedLanguage, setSelectedLanguage] = useState<'mr' | 'hi' | 'en'>('en');
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out of your Farmer account?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.logout'), t('profile.logout_confirm'), [
+      { text: t('general.cancel'), style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: t('profile.logout'),
         style: 'destructive',
         onPress: () => {
           logout();
@@ -67,14 +68,14 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
               {isProfileComplete ? (
                 <View style={styles.verifiedPill}>
                   <Ionicons name="checkmark-circle" size={13} color="#15803D" />
-                  <Text style={styles.verifiedText}>KYC Verified</Text>
+                  <Text style={styles.verifiedText}>{t('kyc.verified')}</Text>
                 </View>
               ) : (
                 <Pressable
                   onPress={() => setProfileModalVisible(true)}
                   style={styles.pendingKycPill}>
                   <Ionicons name="warning" size={13} color="#B45309" />
-                  <Text style={styles.pendingKycText}>KYC Incomplete (Tap to fill)</Text>
+                  <Text style={styles.pendingKycText}>{t('kyc.incomplete')}</Text>
                 </Pressable>
               )}
             </View>
@@ -85,12 +86,12 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
       {/* KYC Identity Details Card */}
       <View style={styles.sectionGroup}>
         <View style={styles.groupHeaderRow}>
-          <Text style={styles.groupTitle}>Kisan KYC & Identity Proof</Text>
+          <Text style={styles.groupTitle}>{t('profile.kyc_title')}</Text>
           <Pressable
             onPress={() => setProfileModalVisible(true)}
             style={styles.editKycBtn}>
             <Ionicons name="pencil" size={14} color="#15803D" />
-            <Text style={styles.editKycText}>Edit KYC</Text>
+            <Text style={styles.editKycText}>{t('profile.edit_kyc')}</Text>
           </Pressable>
         </View>
         
@@ -101,9 +102,9 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
               <Ionicons name="location-outline" size={18} color={ThemeColors.primary} />
             </View>
             <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>Farm / Home Address</Text>
+              <Text style={styles.rowTitle}>{t('profile.address')}</Text>
               <Text style={styles.rowSubtitle}>
-                {farmerProfile?.address || farmerProfile?.addressLine1 || 'Address not provided yet'}
+                {farmerProfile?.address || farmerProfile?.addressLine1 || t('profile.not_provided')}
               </Text>
             </View>
           </View>
@@ -116,9 +117,9 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
               <Ionicons name="calendar-outline" size={18} color={ThemeColors.primary} />
             </View>
             <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>Date of Birth</Text>
+              <Text style={styles.rowTitle}>{t('profile.dob')}</Text>
               <Text style={styles.rowSubtitle}>
-                {farmerProfile?.dob || 'DOB not provided yet'}
+                {farmerProfile?.dob || t('profile.not_provided')}
               </Text>
             </View>
           </View>
@@ -135,7 +136,7 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
               <Text style={styles.rowSubtitle}>
                 {farmerProfile?.idNumber
                   ? `${farmerProfile.idNumber.slice(0, 4)} •••• ${farmerProfile.idNumber.slice(-4)}`
-                  : 'ID Proof not provided yet'}
+                  : t('profile.not_provided')}
               </Text>
             </View>
           </View>
@@ -144,52 +145,52 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
 
       {/* App Preferences */}
       <View style={styles.sectionGroup}>
-        <Text style={styles.groupTitle}>Preferences & Language</Text>
+        <Text style={styles.groupTitle}>{t('profile.preferences')}</Text>
 
         <View style={styles.card}>
           <View style={styles.langRow}>
-            <Text style={styles.rowTitle}>App Language</Text>
+            <Text style={styles.rowTitle}>{t('profile.app_language')}</Text>
             <View style={styles.langPills}>
               <Pressable
-                onPress={() => setSelectedLanguage('en')}
+                onPress={() => setLanguage('en')}
                 style={[
                   styles.langBtn,
-                  selectedLanguage === 'en' && styles.langBtnActive,
+                  language === 'en' && styles.langBtnActive,
                 ]}>
                 <Text
                   style={[
                     styles.langBtnText,
-                    selectedLanguage === 'en' && styles.langBtnTextActive,
+                    language === 'en' && styles.langBtnTextActive,
                   ]}>
                   English
                 </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => setSelectedLanguage('mr')}
+                onPress={() => setLanguage('mr')}
                 style={[
                   styles.langBtn,
-                  selectedLanguage === 'mr' && styles.langBtnActive,
+                  language === 'mr' && styles.langBtnActive,
                 ]}>
                 <Text
                   style={[
                     styles.langBtnText,
-                    selectedLanguage === 'mr' && styles.langBtnTextActive,
+                    language === 'mr' && styles.langBtnTextActive,
                   ]}>
                   मराठी
                 </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => setSelectedLanguage('hi')}
+                onPress={() => setLanguage('hi')}
                 style={[
                   styles.langBtn,
-                  selectedLanguage === 'hi' && styles.langBtnActive,
+                  language === 'hi' && styles.langBtnActive,
                 ]}>
                 <Text
                   style={[
                     styles.langBtnText,
-                    selectedLanguage === 'hi' && styles.langBtnTextActive,
+                    language === 'hi' && styles.langBtnTextActive,
                   ]}>
                   हिंदी
                 </Text>
@@ -201,14 +202,14 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
 
       {/* Help & Support */}
       <View style={styles.sectionGroup}>
-        <Text style={styles.groupTitle}>Help & Support</Text>
+        <Text style={styles.groupTitle}>{t('profile.helpline')}</Text>
 
         <View style={styles.card}>
           <Pressable
             onPress={() => {
-              Alert.alert('APMC Kisan Helpline', 'Toll-free 24x7 Mandi Support: 1800-180-1551', [
+              Alert.alert(t('profile.helpline'), 'Toll-free 24x7 Mandi Support: 1800-180-1551', [
                 { text: 'Call Helpline' },
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('general.cancel'), style: 'cancel' },
               ]);
             }}
             style={styles.row}>
@@ -216,8 +217,8 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
               <Ionicons name="call-outline" size={18} color={ThemeColors.primary} />
             </View>
             <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>APMC Kisan Helpline</Text>
-              <Text style={styles.rowSubtitle}>24x7 Toll-Free Mandi Assistance</Text>
+              <Text style={styles.rowTitle}>{t('profile.helpline')}</Text>
+              <Text style={styles.rowSubtitle}>{t('profile.helpline_sub')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={ThemeColors.textMuted} />
           </Pressable>
@@ -230,7 +231,7 @@ export const SettingsSectionView = memo(function SettingsSectionView() {
           onPress={handleLogout}
           style={({ pressed }) => [styles.logoutBtn, pressed && styles.pressed]}>
           <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-          <Text style={styles.logoutText}>Sign Out of Farmer Account</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
 
