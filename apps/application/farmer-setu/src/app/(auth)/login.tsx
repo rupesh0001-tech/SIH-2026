@@ -12,13 +12,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { AppInput } from '@/components/ui/AppInput';
 import { AppButton } from '@/components/ui/AppButton';
 import { BackButton } from '@/components/ui/BackButton';
+import { LanguageSelectorPill } from '@/components/ui/LanguageSelectorPill';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuth();
+  const { t } = useLanguage();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -31,12 +34,12 @@ export default function LoginScreen() {
 
     const cleanIdentifier = identifier.trim();
     if (!cleanIdentifier) {
-      setValidationError('Please enter your phone number or email.');
+      setValidationError(t('auth.email_label') + ' is required.');
       return;
     }
 
     if (!password) {
-      setValidationError('Please enter your password.');
+      setValidationError(t('auth.password_label') + ' is required.');
       return;
     }
 
@@ -46,10 +49,9 @@ export default function LoginScreen() {
     });
 
     if (success) {
-      // Navigate to farmer dashboard upon successful login
       router.replace('/(farmer)/dashboard');
     }
-  }, [identifier, password, login, router, clearError]);
+  }, [identifier, password, login, router, clearError, t]);
 
   const handleIdentifierChange = useCallback(
     (text: string) => {
@@ -81,17 +83,16 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={true}>
           
-          {/* Top Bar with Safe Inset */}
+          {/* Top Bar with Language Selector */}
           <View style={styles.topBar}>
             <BackButton onPress={() => router.replace('/')} />
+            <LanguageSelectorPill compact />
           </View>
 
           {/* Heading */}
           <View style={styles.headerSection}>
-            <Text style={styles.title}>Hey, welcome back!</Text>
-            <Text style={styles.subtitle}>
-              Good to see you again. Log in to your Farmer account.
-            </Text>
+            <Text style={styles.title}>{t('auth.welcome_title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.welcome_subtitle')}</Text>
           </View>
 
           {/* Error Banner */}
@@ -107,18 +108,17 @@ export default function LoginScreen() {
                     });
                   }}
                   style={styles.verifyNowButton}>
-                  <Text style={styles.verifyNowText}>Enter OTP to Verify →</Text>
+                  <Text style={styles.verifyNowText}>{t('auth.verify_now')}</Text>
                 </Pressable>
               ) : null}
             </View>
           ) : null}
 
-
           {/* Form Inputs */}
           <View style={styles.formSection}>
             <AppInput
-              label="Email or Mobile Phone Number"
-              placeholder="e.g. 7028083300 or farmer@example.com"
+              label={t('auth.email_label')}
+              placeholder={t('auth.email_placeholder')}
               value={identifier}
               onChangeText={handleIdentifierChange}
               autoCapitalize="none"
@@ -127,8 +127,8 @@ export default function LoginScreen() {
             />
 
             <AppInput
-              label="Password"
-              placeholder="Enter your password"
+              label={t('auth.password_label')}
+              placeholder={t('auth.password_placeholder')}
               value={password}
               onChangeText={handlePasswordChange}
               isPassword
@@ -144,25 +144,25 @@ export default function LoginScreen() {
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                   {rememberMe ? <Text style={styles.checkmark}>✓</Text> : null}
                 </View>
-                <Text style={styles.checkboxLabel}>Remember me</Text>
+                <Text style={styles.checkboxLabel}>{t('auth.remember_me')}</Text>
               </Pressable>
 
               <Pressable
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => {
                   Alert.alert(
-                    'Forgot Password',
-                    'Please contact your APMC mandi helpdesk or reset via web portal.',
-                    [{ text: 'OK' }]
+                    t('auth.forgot_alert_title'),
+                    t('auth.forgot_alert_msg'),
+                    [{ text: t('general.ok') }]
                   );
                 }}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.forgotText}>{t('auth.forgot_password')}</Text>
               </Pressable>
             </View>
 
             {/* CTA Button */}
             <AppButton
-              title="Login"
+              title={t('auth.login_btn')}
               onPress={handleLogin}
               isLoading={isLoading}
               variant="primary"
@@ -171,11 +171,11 @@ export default function LoginScreen() {
 
             {/* Footer */}
             <View style={styles.footerRow}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text style={styles.footerText}>{t('auth.no_account')} </Text>
               <Pressable
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => router.push('/(auth)/register')}>
-                <Text style={styles.signUpText}>Sign Up</Text>
+                <Text style={styles.signUpText}>{t('auth.sign_up')}</Text>
               </Pressable>
             </View>
           </View>
@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerSection: {
     marginBottom: 16,
@@ -219,22 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     lineHeight: 20,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 14,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    paddingHorizontal: 10,
-    fontWeight: '500',
   },
   errorBanner: {
     backgroundColor: '#FEF2F2',

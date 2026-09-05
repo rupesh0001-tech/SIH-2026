@@ -13,8 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { AppButton } from '@/components/ui/AppButton';
 import { BackButton } from '@/components/ui/BackButton';
+import { LanguageSelectorPill } from '@/components/ui/LanguageSelectorPill';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -22,6 +24,7 @@ export default function VerifyOtpScreen() {
   const router = useRouter();
   const { email, phone } = useLocalSearchParams<{ email?: string; phone?: string }>();
   const { verifyOtp, sendOtp, isLoading, error, clearError } = useAuth();
+  const { t } = useLanguage();
 
   const [otpCode, setOtpCode] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -121,6 +124,7 @@ export default function VerifyOtpScreen() {
           {/* Top Bar */}
           <View style={styles.topBar}>
             <BackButton onPress={() => router.back()} />
+            <LanguageSelectorPill />
           </View>
 
           {/* Heading */}
@@ -128,9 +132,9 @@ export default function VerifyOtpScreen() {
             <View style={styles.iconCircle}>
               <Text style={styles.iconEmoji}>✉️</Text>
             </View>
-            <Text style={styles.title}>Verify Your Account</Text>
+            <Text style={styles.title}>{t('auth.verify_otp_title')}</Text>
             <Text style={styles.subtitle}>
-              We have sent a 6-digit verification code to
+              {t('auth.verify_otp_subtitle')}
             </Text>
             <Text style={styles.targetIdentifier}>{identifier || 'your email address'}</Text>
           </View>
@@ -186,7 +190,7 @@ export default function VerifyOtpScreen() {
 
           {/* CTA Button */}
           <AppButton
-            title="Verify & Continue"
+            title={t('auth.verify_btn')}
             onPress={handleVerify}
             isLoading={isLoading}
             variant="primary"
@@ -195,14 +199,13 @@ export default function VerifyOtpScreen() {
 
           {/* Resend Code Section */}
           <View style={styles.resendContainer}>
-            <Text style={styles.resendPrompt}>Didn't receive the code? </Text>
             {cooldown > 0 ? (
-              <Text style={styles.cooldownText}>Resend in {cooldown}s</Text>
+              <Text style={styles.cooldownText}>{t('auth.resend_otp')} ({cooldown}s)</Text>
             ) : (
               <Pressable
                 onPress={handleResend}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Text style={styles.resendLink}>Resend OTP</Text>
+                <Text style={styles.resendLink}>{t('auth.resend_otp')}</Text>
               </Pressable>
             )}
           </View>
@@ -231,6 +234,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerSection: {
     alignItems: 'center',

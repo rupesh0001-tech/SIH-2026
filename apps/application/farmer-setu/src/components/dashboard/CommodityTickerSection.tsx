@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 
 interface CommodityItem {
   id: string;
@@ -13,11 +15,11 @@ interface CommodityItem {
 }
 
 const LIVE_COMMODITIES: CommodityItem[] = [
-  { id: '1', name: 'Onion (Red)', mandi: 'Morwadi APMC', price: '₹2,750', change: '+₹140', trend: 'up' },
-  { id: '2', name: 'Soybean', mandi: 'Pimpri Central', price: '₹2,890', change: '+₹80', trend: 'up' },
-  { id: '3', name: 'Wheat (Sharbati)', mandi: 'Gultekdi Market Yard', price: '₹4,920', change: '+₹220', trend: 'up' },
-  { id: '4', name: 'Tomato', mandi: 'Bhosari MIDC', price: '₹3,450', change: '+₹210', trend: 'up' },
-  { id: '5', name: 'Green Peas', mandi: 'Chinchwad Station', price: '₹3,200', change: '-₹50', trend: 'down' },
+  { id: '1', name: 'Onion (Red)', mandi: 'Morwadi APMC Sub-Yard', price: '₹2,750', change: '+₹140', trend: 'up' },
+  { id: '2', name: 'Soybean', mandi: 'Pimpri Central Market Yard', price: '₹2,890', change: '+₹80', trend: 'up' },
+  { id: '3', name: 'Wheat (Sharbati)', mandi: 'Gultekdi Pune APMC Main Yard', price: '₹4,920', change: '+₹220', trend: 'up' },
+  { id: '4', name: 'Tomato', mandi: 'Bhosari Krishi Utpanna Yard', price: '₹3,450', change: '+₹210', trend: 'up' },
+  { id: '5', name: 'Green Peas', mandi: 'Chinchwad Railway Station Mandi', price: '₹3,200', change: '-₹50', trend: 'down' },
 ];
 
 export const CommodityTickerSection = memo(function CommodityTickerSection({
@@ -25,14 +27,16 @@ export const CommodityTickerSection = memo(function CommodityTickerSection({
 }: {
   onSelectCrop?: (cropName: string) => void;
 }) {
+  const { language, t } = useLanguage();
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.liveIndicatorRow}>
           <View style={styles.liveDot} />
-          <Text style={styles.title}>Live Mandi Market Rates</Text>
+          <Text style={styles.title}>{t('dash.live_rates')}</Text>
         </View>
-        <Text style={styles.subtitle}>APMC Live e-NAM</Text>
+        <Text style={styles.subtitle}>{t('dash.live_enam')}</Text>
       </View>
 
       <ScrollView
@@ -45,8 +49,8 @@ export const CommodityTickerSection = memo(function CommodityTickerSection({
             onPress={() => onSelectCrop?.(item.name)}
             style={({ pressed }) => [styles.tickerCard, pressed && styles.cardPressed]}>
             <View style={styles.cropTop}>
-              <Text style={styles.cropName}>{item.name}</Text>
-              <Text style={styles.mandiName}>{item.mandi}</Text>
+              <Text style={styles.cropName}>{translateCropName(item.name, language)}</Text>
+              <Text style={styles.mandiName}>{translateMandiName(item.mandi, language)}</Text>
             </View>
 
             <View style={styles.priceBottom}>

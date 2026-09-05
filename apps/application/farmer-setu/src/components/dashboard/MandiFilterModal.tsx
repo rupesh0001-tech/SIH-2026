@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateCropName } from '@/constants/translations';
 import { SearchablePickerModal } from '@/components/ui/SearchablePickerModal';
 import { CalendarPickerModal } from '@/components/ui/CalendarPickerModal';
 import type { MandiFilterCriteria, PickerOption } from '@/interfaces';
@@ -23,24 +25,24 @@ interface MandiFilterModalProps {
 }
 
 const CROP_OPTIONS: PickerOption[] = [
-  { label: 'All Crops', value: 'All Crops', sublabel: 'Show mandis for all produce' },
-  { label: 'Onion (कांदा)', value: 'Onion', sublabel: 'Red & White Garva varieties', badge: 'High Volume' },
+  { label: 'All Crops (सर्व पिके)', value: 'All Crops', sublabel: 'Show mandis for all produce' },
+  { label: 'Onion (कांदा / प्याज)', value: 'Onion', sublabel: 'Red & White Garva varieties', badge: 'High Volume' },
   { label: 'Soybean (सोयाबीन)', value: 'Soybean', sublabel: 'JS-335 & Organic lots', badge: 'Trending' },
-  { label: 'Cotton (कापूस)', value: 'Cotton', sublabel: 'Long Staple BT Cotton', badge: 'MSP Active' },
-  { label: 'Wheat (गहू)', value: 'Wheat', sublabel: 'Sharbati, Lokwan & Premium' },
-  { label: 'Tomato (टोमॅटो)', value: 'Tomato', sublabel: 'Hybrid & Semi-ripened lots' },
-  { label: 'Maize (मका)', value: 'Maize', sublabel: 'Yellow Grain & Hybrid' },
-  { label: 'Garlic (लसूण)', value: 'Garlic', sublabel: 'Desi & Ooty varieties' },
-  { label: 'Grapes (द्राक्षे)', value: 'Grapes', sublabel: 'Thomson Seedless & Export' },
-  { label: 'Gram / Chana (हरभरा)', value: 'Gram', sublabel: 'Desi Brown & Kabuli' },
-  { label: 'Pomegranate (डाळिंब)', value: 'Pomegranate', sublabel: 'Bhagwa & Arakta' },
-  { label: 'Ginger (आले)', value: 'Ginger', sublabel: 'Fresh root & dry grade' },
-  { label: 'Turmeric (हळद)', value: 'Turmeric', sublabel: 'Salem & Nizamabad variety' },
-  { label: 'Groundnut (भुईमूग)', value: 'Groundnut', sublabel: 'Pods & Shelled seed' },
+  { label: 'Cotton (कापूस / कपास)', value: 'Cotton', sublabel: 'Long Staple BT Cotton', badge: 'MSP Active' },
+  { label: 'Wheat (गहू / गेहूं)', value: 'Wheat', sublabel: 'Sharbati, Lokwan & Premium' },
+  { label: 'Tomato (टोमॅटो / टमाटर)', value: 'Tomato', sublabel: 'Hybrid & Semi-ripened lots' },
+  { label: 'Maize (मका / मक्का)', value: 'Maize', sublabel: 'Yellow Grain & Hybrid' },
+  { label: 'Garlic (लसूण / लहसुन)', value: 'Garlic', sublabel: 'Desi & Ooty varieties' },
+  { label: 'Grapes (द्राक्षे / अंगूर)', value: 'Grapes', sublabel: 'Thomson Seedless & Export' },
+  { label: 'Gram / Chana (हरभरा / चना)', value: 'Gram', sublabel: 'Desi Brown & Kabuli' },
+  { label: 'Pomegranate (डाळिंब / अनार)', value: 'Pomegranate', sublabel: 'Bhagwa & Arakta' },
+  { label: 'Ginger (आले / अदरक)', value: 'Ginger', sublabel: 'Fresh root & dry grade' },
+  { label: 'Turmeric (हळद / हल्दी)', value: 'Turmeric', sublabel: 'Salem & Nizamabad variety' },
+  { label: 'Groundnut (भुईमूग / मूंगफली)', value: 'Groundnut', sublabel: 'Pods & Shelled seed' },
 ];
 
 const LOCATION_OPTIONS: PickerOption[] = [
-  { label: 'All Locations', value: 'All Locations', sublabel: 'Mandis across Maharashtra' },
+  { label: 'All Locations (सर्व ठिकाणे)', value: 'All Locations', sublabel: 'Mandis across Maharashtra' },
   { label: 'Nashik (नाशिक)', value: 'Nashik', sublabel: 'APMC Market Yard, Dindori Rd' },
   { label: 'Lasalgaon (लासलगाव)', value: 'Lasalgaon', sublabel: 'Asia\'s largest onion market' },
   { label: 'Pune (पुणे)', value: 'Pune', sublabel: 'Gultekdi Market Yard' },
@@ -61,6 +63,7 @@ export const MandiFilterModal = memo(function MandiFilterModal({
   onApply,
   onReset,
 }: MandiFilterModalProps) {
+  const { language, t } = useLanguage();
   const [selectedCrop, setSelectedCrop] = useState(criteria.selectedCrop || 'All Crops');
   const [selectedLocation, setSelectedLocation] = useState(criteria.selectedLocation || 'All Locations');
   const [manualDate, setManualDate] = useState(criteria.manualDate || '');
@@ -116,8 +119,8 @@ export const MandiFilterModal = memo(function MandiFilterModal({
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.title}>Filter Mandis & Auctions</Text>
-                <Text style={styles.subtitle}>Refine market rates by crop, location, date & volume</Text>
+                <Text style={styles.title}>{t('filter.mandi_title')}</Text>
+                <Text style={styles.subtitle}>{t('filter.mandi_sub')}</Text>
               </View>
               <Pressable
                 onPress={onClose}
@@ -129,7 +132,7 @@ export const MandiFilterModal = memo(function MandiFilterModal({
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.body}>
               {/* 1. Crop Dropdown (Searchable) */}
-              <Text style={styles.sectionHeading}>1. Crop / Commodity</Text>
+              <Text style={styles.sectionHeading}>{t('filter.crop_heading')}</Text>
               <Pressable
                 onPress={() => setCropPickerVisible(true)}
                 style={styles.dropdownSelector}>
@@ -139,16 +142,16 @@ export const MandiFilterModal = memo(function MandiFilterModal({
                   </View>
                   <View>
                     <Text style={styles.dropdownValue}>
-                      {selectedCrop === 'All Crops' ? 'All Crops (सर्व पिके)' : selectedCrop}
+                      {selectedCrop === 'All Crops' ? (language === 'mr' ? 'सर्व पिके' : language === 'hi' ? 'सभी फसलें' : 'All Crops') : translateCropName(selectedCrop, language)}
                     </Text>
-                    <Text style={styles.dropdownHint}>Tap to search and pick from crop list</Text>
+                    <Text style={styles.dropdownHint}>{t('filter.crop_tap_hint')}</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-down" size={18} color={ThemeColors.textSecondary} />
               </Pressable>
 
               {/* 2. Location Dropdown (Searchable) */}
-              <Text style={styles.sectionHeading}>2. Mandi District / Yard Location</Text>
+              <Text style={styles.sectionHeading}>{t('filter.location_heading')}</Text>
               <Pressable
                 onPress={() => setLocationPickerVisible(true)}
                 style={styles.dropdownSelector}>
@@ -158,16 +161,16 @@ export const MandiFilterModal = memo(function MandiFilterModal({
                   </View>
                   <View>
                     <Text style={styles.dropdownValue}>
-                      {selectedLocation === 'All Locations' ? 'All Locations (सर्व बाजार समित्या)' : selectedLocation}
+                      {selectedLocation === 'All Locations' ? (language === 'mr' ? 'सर्व ठिकाणे' : language === 'hi' ? 'सभी स्थान' : 'All Locations') : selectedLocation}
                     </Text>
-                    <Text style={styles.dropdownHint}>Tap to search and pick APMC mandi location</Text>
+                    <Text style={styles.dropdownHint}>{t('filter.location_tap_hint')}</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-down" size={18} color={ThemeColors.textSecondary} />
               </Pressable>
 
               {/* 3. Date Selection (Calendar Picker) */}
-              <Text style={styles.sectionHeading}>3. Auction Arrival Date</Text>
+              <Text style={styles.sectionHeading}>{t('filter.date_heading')}</Text>
               <Pressable
                 onPress={() => setCalendarPickerVisible(true)}
                 style={styles.dropdownSelector}>
@@ -177,9 +180,9 @@ export const MandiFilterModal = memo(function MandiFilterModal({
                   </View>
                   <View>
                     <Text style={styles.dropdownValue}>
-                      {manualDate ? manualDate : 'Any Date (सर्व तारखा)'}
+                      {manualDate ? manualDate : (language === 'mr' ? 'सर्व तारखा' : language === 'hi' ? 'सभी तारीखें' : 'Any Date')}
                     </Text>
-                    <Text style={styles.dropdownHint}>Tap to open calendar picker</Text>
+                    <Text style={styles.dropdownHint}>{t('filter.date_tap_hint')}</Text>
                   </View>
                 </View>
                 {manualDate ? (
@@ -194,14 +197,14 @@ export const MandiFilterModal = memo(function MandiFilterModal({
               </Pressable>
 
               {/* 4. Quantity / Farmer Count Stepper (+ / -) */}
-              <Text style={styles.sectionHeading}>4. Active Farmers in Queue (Min Count)</Text>
+              <Text style={styles.sectionHeading}>{t('filter.min_farmers')}</Text>
               <View style={styles.stepperContainer}>
                 <View style={styles.stepperLabelCol}>
                   <Text style={styles.stepperValueText}>
-                    {farmerCount === 0 ? 'Any Count' : `${farmerCount}+ Farmers`}
+                    {farmerCount === 0 ? (language === 'mr' ? 'कोणतीही मर्यादा नाही' : language === 'hi' ? 'कोई सीमा नहीं' : 'Any Count') : `${farmerCount}+ ${t('filter.farmers_unit')}`}
                   </Text>
                   <Text style={styles.stepperSubtext}>
-                    {farmerCount === 0 ? 'Showing all mandis regardless of traffic' : `At least ${farmerCount} registered farmers`}
+                    {farmerCount === 0 ? (language === 'mr' ? 'सर्व बाजार समित्या दर्शवा' : language === 'hi' ? 'सभी मंडियां देखें' : 'Showing all mandis regardless of traffic') : `At least ${farmerCount} registered farmers`}
                   </Text>
                 </View>
 
@@ -237,11 +240,11 @@ export const MandiFilterModal = memo(function MandiFilterModal({
             {/* Action Footer */}
             <View style={styles.footer}>
               <Pressable onPress={handleReset} style={styles.resetBtn}>
-                <Text style={styles.resetText}>Reset All</Text>
+                <Text style={styles.resetText}>{t('filter.reset')}</Text>
               </Pressable>
 
               <Pressable onPress={handleApply} style={styles.applyBtn}>
-                <Text style={styles.applyText}>Apply Filters</Text>
+                <Text style={styles.applyText}>{t('filter.apply')}</Text>
               </Pressable>
             </View>
           </View>

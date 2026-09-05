@@ -16,6 +16,8 @@ import { MandiFilterModal } from './MandiFilterModal';
 import { MandiMapViewModal } from './MandiMapViewModal';
 import { ProfileCompletionModal } from './ProfileCompletionModal';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { getApprovedMandisApi, createFarmerBookingApi } from '@/services/farmer.service';
 import { getNearbyMandisForUser, calculateDistanceKm, formatDistance } from '@/utils/location.utils';
@@ -36,6 +38,7 @@ const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
 
 export const MandiSectionView = memo(function MandiSectionView() {
   const { token, isProfileComplete } = useAuth();
+  const { language, t } = useLanguage();
   const { coordinates: userCoords, locationName } = useUserLocation();
 
   const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
@@ -116,8 +119,8 @@ export const MandiSectionView = memo(function MandiSectionView() {
       // 1. Text Search
       if (criteria.searchQuery.trim()) {
         const query = criteria.searchQuery.toLowerCase();
-        const matchesName = mandi.name.toLowerCase().includes(query);
-        const matchesCrop = mandi.topCrop.toLowerCase().includes(query) || (mandi.acceptedCrops && mandi.acceptedCrops.some((c) => c.toLowerCase().includes(query)));
+        const matchesName = mandi.name.toLowerCase().includes(query) || translateMandiName(mandi.name, language).toLowerCase().includes(query);
+        const matchesCrop = mandi.topCrop.toLowerCase().includes(query) || (mandi.acceptedCrops && mandi.acceptedCrops.some((c) => c.toLowerCase().includes(query) || translateCropName(c, language).toLowerCase().includes(query)));
         const matchesDistrict = mandi.district.toLowerCase().includes(query);
         if (!matchesName && !matchesCrop && !matchesDistrict) return false;
       }
@@ -129,28 +132,29 @@ export const MandiSectionView = memo(function MandiSectionView() {
       if (targetCrop) {
         const hasCrop =
           mandi.topCrop.toLowerCase().includes(targetCrop.toLowerCase()) ||
-          (mandi.acceptedCrops && mandi.acceptedCrops.some((c) => c.toLowerCase().includes(targetCrop.toLowerCase())));
+          (mandi.acceptedCrops &&
+            mandi.acceptedCrops.some((c) => c.toLowerCase().includes(targetCrop.toLowerCase())));
         if (!hasCrop) return false;
       }
 
       // 3. Location filter
-      if (criteria.selectedLocation && criteria.selectedLocation !== 'All Locations') {
+      if (criteria.selectedLocation !== 'All Locations') {
         if (!mandi.district.toLowerCase().includes(criteria.selectedLocation.toLowerCase())) {
           return false;
         }
       }
 
-      // 4. Farmers Count filter
+      // 4. Min Farmers count in queue
       if (criteria.minFarmers.trim()) {
         const min = parseInt(criteria.minFarmers, 10);
-        if (!isNaN(min) && mandi.activeFarmersCount < min) {
+        if (!isNaN(min) && (mandi.activeFarmersCount || 0) < min) {
           return false;
         }
       }
 
       return true;
     });
-  }, [dynamicMandis, criteria]);
+  }, [dynamicMandis, criteria, language]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredMandis.length / ITEMS_PER_PAGE));
@@ -164,12 +168,12 @@ export const MandiSectionView = memo(function MandiSectionView() {
       // 1. KYC Profile Completion Check (Strict Requirement)
       if (!isProfileComplete) {
         Alert.alert(
-          'KYC Verification Required',
-          'You cannot book a mandi auction slot until you complete your profile (Address, DOB, and ID proof).',
+          t('mandi.booking_kyc_required_title'),
+          t('mandi.booking_kyc_required_msg'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('general.cancel'), style: 'cancel' },
             {
-              text: 'Complete KYC Now',
+              text: t('mandi.complete_kyc_now'),
               onPress: () => setProfileModalVisible(true),
             },
           ]
@@ -193,9 +197,14 @@ export const MandiSectionView = memo(function MandiSectionView() {
 
           if (res.success && res.data) {
             Alert.alert(
-              'Gate Slot Booked!',
-              `Your APMC entry pass for ${mandi.name} is confirmed.\n\nGate Pass Token: ${res.data.booking.token}\nSlot: 07:00 AM - 11:00 AM\nCrop: ${mandi.acceptedCrops?.[0] || 'Produce'} (25 Qtl)`,
-              [{ text: 'OK' }]
+              t('mandi.booking_success_title'),
+              t('mandi.booking_success_msg', {
+                mandi: translateMandiName(mandi.name, language),
+                token: res.data.booking.token,
+                crop: translateCropName(mandi.acceptedCrops?.[0] || 'Produce', language),
+                qty: 25,
+              }),
+              [{ text: t('general.ok') }]
             );
             return;
           }
@@ -203,12 +212,17 @@ export const MandiSectionView = memo(function MandiSectionView() {
       }
 
       Alert.alert(
-        'Gate Slot Booked!',
-        `Entry pass generated for ${mandi.name}.\n\nPass Code: TKN-${Math.floor(1000 + Math.random() * 9000)}\nStatus: Verified for Gate Entry`,
-        [{ text: 'OK' }]
+        t('mandi.booking_success_title'),
+        t('mandi.booking_success_msg', {
+          mandi: translateMandiName(mandi.name, language),
+          token: `TKN-${Math.floor(1000 + Math.random() * 9000)}`,
+          crop: translateCropName(mandi.acceptedCrops?.[0] || 'Produce', language),
+          qty: 25,
+        }),
+        [{ text: t('general.ok') }]
       );
     },
-    [isProfileComplete, token]
+    [isProfileComplete, token, language, t]
   );
 
   const hasActiveFilters =
@@ -228,7 +242,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
         <View style={styles.searchBar}>
           <Ionicons name="search" size={18} color={ThemeColors.textSecondary} />
           <TextInput
-            placeholder="Search mandi, crop, location..."
+            placeholder={t('mandi.search_placeholder')}
             placeholderTextColor="#9CA3AF"
             value={criteria.searchQuery}
             onChangeText={(text) => {
@@ -271,11 +285,11 @@ export const MandiSectionView = memo(function MandiSectionView() {
       {/* Active Filter Chips */}
       {hasActiveFilters ? (
         <View style={styles.activeFiltersRow}>
-          <Text style={styles.activeFiltersLabel}>Filters:</Text>
+          <Text style={styles.activeFiltersLabel}>{t('mandi.filter_label')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
             {criteria.manualCrop || criteria.selectedCrop !== 'All Crops' ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.manualCrop || criteria.selectedCrop}</Text>
+                <Text style={styles.activePillText}>{translateCropName(criteria.manualCrop || criteria.selectedCrop, language)}</Text>
               </View>
             ) : null}
             {criteria.manualDate ? (
@@ -285,7 +299,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
             ) : null}
             {criteria.minFarmers ? (
               <View style={styles.activePill}>
-                <Text style={styles.activePillText}>{criteria.minFarmers}+ in queue</Text>
+                <Text style={styles.activePillText}>{criteria.minFarmers}+ {t('mandi.in_queue')}</Text>
               </View>
             ) : null}
             {criteria.selectedLocation !== 'All Locations' ? (
@@ -299,7 +313,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
                 setCurrentPage(1);
               }}
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
-              <Text style={styles.clearAllText}>Clear</Text>
+              <Text style={styles.clearAllText}>{t('mandi.clear')}</Text>
             </Pressable>
           </ScrollView>
         </View>
@@ -309,7 +323,10 @@ export const MandiSectionView = memo(function MandiSectionView() {
       <View style={styles.locationHintRow}>
         <Ionicons name="navigate-circle" size={15} color={ThemeColors.primary} />
         <Text style={styles.locationHintText}>
-          Showing {filteredMandis.length} verified mandis in {locationName || 'Pimpri-Chinchwad / Pune Cluster'}
+          {t('mandi.showing_count', {
+            count: filteredMandis.length,
+            location: locationName || t('dash.cluster_name'),
+          })}
         </Text>
       </View>
 
@@ -318,17 +335,17 @@ export const MandiSectionView = memo(function MandiSectionView() {
         {isLoadingMandis ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={ThemeColors.primary} />
-            <Text style={styles.loadingText}>Loading live APMC market yards...</Text>
+            <Text style={styles.loadingText}>{t('mandi.loading')}</Text>
           </View>
         ) : paginatedMandis.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="storefront-outline" size={36} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>No mandis match your filters</Text>
-            <Text style={styles.emptySubtitle}>Try changing your crop or location filters to see available yards.</Text>
+            <Text style={styles.emptyTitle}>{t('mandi.no_match')}</Text>
+            <Text style={styles.emptySubtitle}>{t('mandi.no_match_sub')}</Text>
             <Pressable
               onPress={() => setCriteria(INITIAL_FILTER_CRITERIA)}
               style={styles.resetBtn}>
-              <Text style={styles.resetBtnText}>Reset All Filters</Text>
+              <Text style={styles.resetBtnText}>{t('mandi.reset_filters')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -336,7 +353,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
             const cropsList = mandi.acceptedCrops && mandi.acceptedCrops.length > 0
               ? mandi.acceptedCrops
               : mandi.topCrop.split(',').map((c) => c.trim());
-            const cropsDisplay = cropsList.slice(0, 3).join(' • ') + (cropsList.length > 3 ? '...' : '');
+            const cropsDisplay = cropsList.slice(0, 3).map((c) => translateCropName(c, language)).join(' • ') + (cropsList.length > 3 ? '...' : '');
 
             return (
               <View key={mandi.id} style={styles.mandiCard}>
@@ -347,9 +364,9 @@ export const MandiSectionView = memo(function MandiSectionView() {
                       <Ionicons name="storefront" size={18} color={ThemeColors.primary} />
                     </View>
                     <View style={styles.nameContainer}>
-                      <Text style={styles.mandiName}>{mandi.name}</Text>
+                      <Text style={styles.mandiName}>{translateMandiName(mandi.name, language)}</Text>
                       <Text style={styles.mandiDistrict}>
-                        {mandi.district} • {formatDistance(mandi.distanceKm)} away
+                        {mandi.district} • {formatDistance(mandi.distanceKm)} {t('mandi.away')}
                       </Text>
                       {mandi.address ? (
                         <Text style={styles.mandiAddress} numberOfLines={1}>
@@ -361,33 +378,33 @@ export const MandiSectionView = memo(function MandiSectionView() {
 
                   <View style={styles.statusBadge}>
                     <View style={styles.statusDot} />
-                    <Text style={styles.statusText}>{mandi.isOpen ? 'Open' : 'Closed'}</Text>
+                    <Text style={styles.statusText}>{mandi.isOpen ? t('mandi.open') : t('mandi.closed')}</Text>
                   </View>
                 </View>
 
-                {/* 2. Top Commodities Strip (Moved to TOP of card) */}
+                {/* 2. Top Commodities Strip */}
                 <View style={styles.topCommodityStrip}>
                   <View style={styles.topCommodityBadge}>
                     <Ionicons name="leaf-outline" size={12} color="#15803D" />
-                    <Text style={styles.topCommodityLabel}>Crops:</Text>
+                    <Text style={styles.topCommodityLabel}>{t('mandi.crops')}</Text>
                     <Text style={styles.topCommodityText} numberOfLines={1}>
                       {cropsDisplay}
                     </Text>
                   </View>
                 </View>
 
-                {/* 3. Card Body: Right side shows ONLY number in queue and price in EXACT SAME SIZE */}
+                {/* 3. Card Body */}
                 <View style={styles.cardBody}>
                   <View style={styles.bodyLeftCol}>
-                    <Text style={styles.operatingTimeText}>Hours: {mandi.operatingHours || '05:30 AM - 07:00 PM'}</Text>
-                    <Text style={styles.gateInfoText}>Arrival Slot: Gate 1 & 2</Text>
+                    <Text style={styles.operatingTimeText}>{t('mandi.hours')} {mandi.operatingHours || '05:30 AM - 07:00 PM'}</Text>
+                    <Text style={styles.gateInfoText}>{t('mandi.arrival_gate')}</Text>
                   </View>
 
                   <View style={styles.divider} />
 
                   <View style={styles.bodyRightCol}>
                     <Text style={styles.uniformMetricText}>
-                      {mandi.activeFarmersCount} in Queue
+                      {mandi.activeFarmersCount} {t('mandi.in_queue')}
                     </Text>
                     <Text style={styles.uniformMetricText}>
                       {mandi.modalPrice}
@@ -395,20 +412,20 @@ export const MandiSectionView = memo(function MandiSectionView() {
                   </View>
                 </View>
 
-                {/* 4. Action Buttons: "Book Gate Slot" + "Info" (i) option popup */}
+                {/* 4. Action Buttons */}
                 <View style={styles.actionsRow}>
                   <Pressable
                     onPress={() => handleBookSlot(mandi)}
                     style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
                     <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.primaryBtnText}>Book Gate Slot</Text>
+                    <Text style={styles.primaryBtnText}>{t('mandi.book_gate_slot')}</Text>
                   </Pressable>
 
                   <Pressable
                     onPress={() => setInfoModalMandi(mandi)}
                     style={({ pressed }) => [styles.infoBtn, pressed && styles.pressed]}>
                     <Ionicons name="information-circle-outline" size={18} color={ThemeColors.primary} />
-                    <Text style={styles.infoBtnText}>Info</Text>
+                    <Text style={styles.infoBtnText}>{t('mandi.info')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -429,12 +446,12 @@ export const MandiSectionView = memo(function MandiSectionView() {
               size={16}
               color={currentPage <= 1 ? '#9CA3AF' : ThemeColors.textPrimary}
             />
-            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>Prev</Text>
+            <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageTextDisabled]}>{t('mandi.prev')}</Text>
           </Pressable>
 
           <View style={styles.pageIndicatorPill}>
             <Text style={styles.pageIndicatorText}>
-              Page {currentPage} of {totalPages}
+              {t('mandi.page_indicator', { page: currentPage, total: totalPages })}
             </Text>
           </View>
 
@@ -442,7 +459,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
             disabled={currentPage >= totalPages}
             onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             style={[styles.pageBtn, currentPage >= totalPages && styles.pageBtnDisabled]}>
-            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>Next</Text>
+            <Text style={[styles.pageBtnText, currentPage >= totalPages && styles.pageTextDisabled]}>{t('mandi.next')}</Text>
             <Ionicons
               name="chevron-forward"
               size={16}
@@ -495,7 +512,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
             <View style={styles.infoModalCard}>
               <View style={styles.infoModalHeader}>
                 <View style={styles.infoModalTitleCol}>
-                  <Text style={styles.infoModalName}>{infoModalMandi.name}</Text>
+                  <Text style={styles.infoModalName}>{translateMandiName(infoModalMandi.name, language)}</Text>
                   <Text style={styles.infoModalCode}>APMC Code: {(infoModalMandi as any).apmcCode || 'MH-APMC-001'}</Text>
                 </View>
                 <Pressable
@@ -508,39 +525,39 @@ export const MandiSectionView = memo(function MandiSectionView() {
               <ScrollView style={styles.infoScroll} showsVerticalScrollIndicator={false}>
                 {/* Address & Hours */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.infoSectionTitle}>Location & Timings</Text>
+                  <Text style={styles.infoSectionTitle}>{t('mandi.modal_title')}</Text>
                   <Text style={styles.infoAddressText}>{infoModalMandi.address || infoModalMandi.district}</Text>
-                  <Text style={styles.infoTimingText}>Operating: {infoModalMandi.operatingHours || '05:30 AM - 07:00 PM (Mon - Sat)'}</Text>
+                  <Text style={styles.infoTimingText}>{t('mandi.hours')} {infoModalMandi.operatingHours || '05:30 AM - 07:00 PM (Mon - Sat)'}</Text>
                 </View>
 
                 {/* Accepted Crops & Modal Rates */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.infoSectionTitle}>Accepted Commodities & Benchmark Rates</Text>
+                  <Text style={styles.infoSectionTitle}>{t('mandi.accepted_commodities')}</Text>
                   <View style={styles.cropTagsGrid}>
                     {(infoModalMandi.acceptedCrops || infoModalMandi.topCrop.split(',')).map((crop, idx) => (
                       <View key={idx} style={styles.cropTagPill}>
                         <Ionicons name="leaf" size={11} color="#15803D" />
-                        <Text style={styles.cropTagPillText}>{crop.trim()}</Text>
+                        <Text style={styles.cropTagPillText}>{translateCropName(crop.trim(), language)}</Text>
                       </View>
                     ))}
                   </View>
                   <View style={styles.rateHighlightBox}>
-                    <Text style={styles.rateHighlightLabel}>Daily Modal Price:</Text>
+                    <Text style={styles.rateHighlightLabel}>{t('mandi.daily_modal')}</Text>
                     <Text style={styles.rateHighlightValue}>{infoModalMandi.modalPrice}</Text>
                   </View>
                 </View>
 
                 {/* Yard Traffic & Slots */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.infoSectionTitle}>Arrival Capacity & Queue</Text>
+                  <Text style={styles.infoSectionTitle}>{t('mandi.arrival_capacity')}</Text>
                   <View style={styles.metricsRow}>
                     <View style={styles.metricBox}>
                       <Text style={styles.metricBoxNum}>{infoModalMandi.activeFarmersCount}</Text>
-                      <Text style={styles.metricBoxLabel}>Farmers in Queue</Text>
+                      <Text style={styles.metricBoxLabel}>{t('mandi.farmers_queue')}</Text>
                     </View>
                     <View style={styles.metricBox}>
                       <Text style={styles.metricBoxNum}>{infoModalMandi.estimatedQueueTime}</Text>
-                      <Text style={styles.metricBoxLabel}>Est. Gate Wait</Text>
+                      <Text style={styles.metricBoxLabel}>{t('mandi.est_wait')}</Text>
                     </View>
                   </View>
                 </View>
@@ -554,7 +571,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
                     handleBookSlot(target);
                   }}
                   style={styles.infoModalBookBtn}>
-                  <Text style={styles.infoModalBookBtnText}>Book Gate Entry Pass</Text>
+                  <Text style={styles.infoModalBookBtnText}>{t('mandi.book_entry_pass')}</Text>
                 </Pressable>
               </View>
             </View>

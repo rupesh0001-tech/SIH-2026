@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { MandiFilterModal } from './MandiFilterModal';
 import { OpenStreetMapViewer, MapLabelMode } from './OpenStreetMapViewer';
+import { useLanguage } from '@/context/LanguageContext';
+import { translateMandiName, translateCropName } from '@/constants/translations';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { formatDistance } from '@/utils/location.utils';
 import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
@@ -44,6 +46,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
   mandis: initialMandis,
   onSelectMandi,
 }: MandiMapViewModalProps) {
+  const { language, t } = useLanguage();
   const [recenterCounter, setRecenterCounter] = useState<number>(0);
   const [labelMode, setLabelMode] = useState<MapLabelMode>('price');
 
@@ -68,9 +71,9 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
       // 1. Text Search
       if (mapSearch.trim()) {
         const query = mapSearch.toLowerCase();
-        const matchesName = m.name.toLowerCase().includes(query);
+        const matchesName = m.name.toLowerCase().includes(query) || translateMandiName(m.name, language).toLowerCase().includes(query);
         const matchesDistrict = m.district.toLowerCase().includes(query);
-        const matchesCrop = m.topCrop.toLowerCase().includes(query);
+        const matchesCrop = m.topCrop.toLowerCase().includes(query) || translateCropName(m.topCrop, language).toLowerCase().includes(query);
         if (!matchesName && !matchesDistrict && !matchesCrop) return false;
       }
 
@@ -99,7 +102,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
       return true;
     });
-  }, [initialMandis, mapSearch, criteria]);
+  }, [initialMandis, mapSearch, criteria, language]);
 
   // Keep selected mandi valid
   const currentSelectedMandi = useMemo(() => {
@@ -113,25 +116,26 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
   const handleRecenterToUser = useCallback(() => {
     setRecenterCounter((prev) => prev + 1);
     Alert.alert(
-      'Location Calibrated',
+      t('map.location_calibrated'),
       `GPS: ${locationName}\nLat: ${userCoords.latitude.toFixed(4)}, Lng: ${userCoords.longitude.toFixed(4)}`
     );
-  }, [userCoords, locationName]);
+  }, [userCoords, locationName, t]);
 
   const handleOpenDirections = useCallback((mandi: MandiItem) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${mandi.latitude},${mandi.longitude}`;
+    const displayName = translateMandiName(mandi.name, language);
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert('Directions', `Navigate to ${mandi.name} (${mandi.distanceKm} km away)`);
+          Alert.alert(t('map.directions'), `${t('map.directions')}: ${displayName} (${mandi.distanceKm} km ${t('mandi.away')})`);
         }
       })
       .catch(() => {
-        Alert.alert('Directions', `Navigate to ${mandi.name} (${mandi.distanceKm} km away)`);
+        Alert.alert(t('map.directions'), `${t('map.directions')}: ${displayName} (${mandi.distanceKm} km ${t('mandi.away')})`);
       });
-  }, []);
+  }, [language, t]);
 
   const activeFiltersCount =
     (criteria.selectedCrop !== 'All Crops' ? 1 : 0) +
@@ -161,7 +165,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           <View style={styles.searchBox}>
             <Ionicons name="search" size={16} color={ThemeColors.primary} />
             <TextInput
-              placeholder="Search mandi, district or crop..."
+              placeholder={t('map.search_placeholder')}
               placeholderTextColor="#9CA3AF"
               value={mapSearch}
               onChangeText={setMapSearch}
@@ -214,14 +218,14 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             <Pressable onPress={refreshLocation} style={styles.statusBannerWarning}>
               <Ionicons name="warning-outline" size={13} color="#B45309" />
               <Text style={styles.statusBannerWarningText} numberOfLines={1}>
-                GPS restricted • Showing Pune APMC cluster
+                {t('map.gps_restricted')}
               </Text>
             </Pressable>
           ) : (
             <View style={styles.statusBannerSuccess}>
               <View style={styles.liveDot} />
               <Text style={styles.statusBannerSuccessText} numberOfLines={1}>
-                {locationName} • {filteredMandis.length} Mandis
+                {t('map.mandis_count', { name: locationName, count: filteredMandis.length })}
               </Text>
             </View>
           )}
@@ -232,7 +236,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               onPress={() => setLabelMode('price')}
               style={[styles.labelPill, labelMode === 'price' && styles.labelPillActive]}>
               <Text style={[styles.labelPillText, labelMode === 'price' && styles.labelPillTextActive]}>
-                Price
+                {t('map.price')}
               </Text>
             </Pressable>
 
@@ -240,7 +244,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               onPress={() => setLabelMode('name')}
               style={[styles.labelPill, labelMode === 'name' && styles.labelPillActive]}>
               <Text style={[styles.labelPillText, labelMode === 'name' && styles.labelPillTextActive]}>
-                Name
+                {t('map.name')}
               </Text>
             </Pressable>
 
@@ -248,7 +252,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               onPress={() => setLabelMode('crop')}
               style={[styles.labelPill, labelMode === 'crop' && styles.labelPillActive]}>
               <Text style={[styles.labelPillText, labelMode === 'crop' && styles.labelPillTextActive]}>
-                Crop
+                {t('map.crop')}
               </Text>
             </Pressable>
           </View>
@@ -276,7 +280,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
           <View style={styles.mapInfoBadge}>
             <Ionicons name="map-outline" size={14} color={ThemeColors.primary} />
             <Text style={styles.mapInfoText}>
-              OpenStreetMap • {filteredMandis.length} Mandis Live
+              {t('map.mandis_live', { count: filteredMandis.length })}
             </Text>
           </View>
         </View>
@@ -287,9 +291,9 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             <View style={styles.mandiDetailCard}>
               <View style={styles.detailHeader}>
                 <View style={styles.detailTitleCol}>
-                  <Text style={styles.detailName}>{currentSelectedMandi.name}</Text>
+                  <Text style={styles.detailName}>{translateMandiName(currentSelectedMandi.name, language)}</Text>
                   <Text style={styles.detailDistrict}>
-                    {currentSelectedMandi.district} • {formatDistance(currentSelectedMandi.distanceKm)} away
+                    {currentSelectedMandi.district} • {formatDistance(currentSelectedMandi.distanceKm)} {t('mandi.away')}
                   </Text>
                   {currentSelectedMandi.address ? (
                     <Text style={styles.detailAddress} numberOfLines={1}>
@@ -310,12 +314,12 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               <View style={styles.infoPillsRow}>
                 <View style={styles.tagPill}>
                   <Ionicons name="leaf-outline" size={12} color={ThemeColors.primaryDark} />
-                  <Text style={styles.tagText}>{currentSelectedMandi.topCrop}</Text>
+                  <Text style={styles.tagText}>{translateCropName(currentSelectedMandi.topCrop, language)}</Text>
                 </View>
                 <View style={styles.tagPill}>
                   <Ionicons name="people-outline" size={12} color={ThemeColors.primary} />
                   <Text style={styles.tagText}>
-                    {currentSelectedMandi.activeFarmersCount || 85} in Queue
+                    {currentSelectedMandi.activeFarmersCount || 85} {t('mandi.in_queue')}
                   </Text>
                 </View>
                 <View style={styles.tagPill}>
@@ -324,7 +328,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                 </View>
                 <View style={[styles.tagPill, { backgroundColor: '#DCFCE7' }]}>
                   <Ionicons name="checkmark-circle" size={12} color="#15803D" />
-                  <Text style={[styles.tagText, { color: '#15803D' }]}>Open</Text>
+                  <Text style={[styles.tagText, { color: '#15803D' }]}>{t('mandi.open')}</Text>
                 </View>
               </View>
 
@@ -334,7 +338,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   onPress={() => handleOpenDirections(currentSelectedMandi)}
                   style={({ pressed }) => [styles.directionBtn, pressed && styles.pressed]}>
                   <Ionicons name="navigate-outline" size={16} color={ThemeColors.primary} />
-                  <Text style={styles.directionBtnText}>Directions</Text>
+                  <Text style={styles.directionBtnText}>{t('map.directions')}</Text>
                 </Pressable>
 
                 <Pressable
@@ -344,7 +348,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   }}
                   style={({ pressed }) => [styles.bookPassBtn, pressed && styles.pressed]}>
                   <Text style={styles.bookPassText}>
-                    Book Slot • {currentSelectedMandi.name.split(' ')[0]}
+                    {t('map.book_slot')} • {translateMandiName(currentSelectedMandi.name, language).split(' ')[0]}
                   </Text>
                   <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                 </Pressable>

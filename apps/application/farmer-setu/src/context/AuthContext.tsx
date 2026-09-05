@@ -7,7 +7,7 @@ import React, {
   useEffect,
   type ReactNode,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorageItem, setStorageItem, removeStorageItem } from '@/utils/storage';
 import type {
   AuthContextType,
   FarmerUser,
@@ -40,18 +40,18 @@ async function persistStoredAuth(
 ): Promise<void> {
   try {
     if (user && token) {
-      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      await setStorageItem(TOKEN_STORAGE_KEY, token);
+      await setStorageItem(USER_STORAGE_KEY, JSON.stringify(user));
       if (profile) {
-        await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+        await setStorageItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
       }
     } else {
-      await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
-      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
+      await removeStorageItem(TOKEN_STORAGE_KEY);
+      await removeStorageItem(USER_STORAGE_KEY);
+      await removeStorageItem(PROFILE_STORAGE_KEY);
     }
   } catch (err) {
-    console.warn('Failed to persist auth to AsyncStorage:', err);
+    // Memory fallback handled
   }
 }
 
@@ -70,25 +70,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await getFarmerProfileApi(activeToken);
       if (res.success && res.data && res.data.farmerProfile) {
         setFarmerProfile(res.data.farmerProfile);
-        await AsyncStorage.setItem(
+        await setStorageItem(
           PROFILE_STORAGE_KEY,
           JSON.stringify(res.data.farmerProfile)
         );
       }
     } catch (err) {
-      console.warn('Failed to fetch farmer profile:', err);
+      // Handled
     }
   }, []);
 
-  // Rehydrate auth state from AsyncStorage on app startup
+  // Rehydrate auth state from storage on app startup
   useEffect(() => {
     let isMounted = true;
 
     async function loadAuth() {
       try {
-        const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-        const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
-        const storedProfile = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+        const storedToken = await getStorageItem(TOKEN_STORAGE_KEY);
+        const storedUser = await getStorageItem(USER_STORAGE_KEY);
+        const storedProfile = await getStorageItem(PROFILE_STORAGE_KEY);
 
         if (isMounted && storedToken && storedUser) {
           const parsedUser = JSON.parse(storedUser) as FarmerUser;
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.data.farmerProfile) {
         setFarmerProfile(response.data.farmerProfile);
-        await AsyncStorage.setItem(
+        await setStorageItem(
           PROFILE_STORAGE_KEY,
           JSON.stringify(response.data.farmerProfile)
         );

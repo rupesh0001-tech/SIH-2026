@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Alert, BackHandler, Pressable } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { ThemeColors } from '@/constants/theme';
 import { FloatingBottomNav } from '@/components/navigation/FloatingBottomNav';
 import { ProfileCompletionModal } from '@/components/dashboard/ProfileCompletionModal';
@@ -17,6 +18,7 @@ import type { NavTabType } from '@/interfaces';
 
 export default function FarmerDashboardScreen() {
   const { user, farmerProfile, farmerCode, isProfileComplete } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<NavTabType>('dashboard');
   const [profileModalVisible, setProfileModalVisible] = useState<boolean>(false);
 
@@ -50,26 +52,26 @@ export default function FarmerDashboardScreen() {
     switch (activeTab) {
       case 'dashboard':
         return {
-          title: 'Dashboard',
-          subtitle: `Namaste, ${farmerName} 🌾`,
+          title: t('nav.dashboard'),
+          subtitle: t('nav.sub.dashboard', { name: farmerName }),
         };
       case 'mandi':
         return {
-          title: 'Market Mandis',
-          subtitle: 'Live APMC Rates & Auctions',
+          title: t('nav.mandi'),
+          subtitle: t('nav.sub.mandi'),
         };
       case 'bookings':
         return {
-          title: 'My Bookings',
-          subtitle: 'Gate Passes & Auction Slots',
+          title: t('nav.bookings'),
+          subtitle: t('nav.sub.bookings'),
         };
       case 'settings':
         return {
-          title: 'My Profile',
-          subtitle: 'Kisan KYC & App Settings',
+          title: t('nav.settings'),
+          subtitle: t('nav.sub.settings'),
         };
     }
-  }, [activeTab, farmerName]);
+  }, [activeTab, farmerName, t]);
 
   const handleSearchPress = useCallback(() => {
     Alert.alert('Search Mandi Setu', 'Search crops, modal prices, mandi slots, or token numbers.', [
@@ -113,14 +115,14 @@ export default function FarmerDashboardScreen() {
                 <Ionicons name="alert-circle" size={18} color="#B45309" />
               </View>
               <View style={styles.kycBannerTextCol}>
-                <Text style={styles.kycBannerTitle}>Action Required: Complete Profile KYC</Text>
+                <Text style={styles.kycBannerTitle}>{t('kyc.banner_title')}</Text>
                 <Text style={styles.kycBannerSub}>
-                  Add your address, DOB & ID proof to unlock Mandi slot bookings.
+                  {t('kyc.banner_sub')}
                 </Text>
               </View>
             </View>
             <View style={styles.completePill}>
-              <Text style={styles.completePillText}>Verify</Text>
+              <Text style={styles.completePillText}>{t('kyc.verify_btn')}</Text>
               <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
             </View>
           </Pressable>
