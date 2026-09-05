@@ -212,7 +212,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
           <Ionicons
             name="options-outline"
             size={20}
-            color={hasActiveFilters ? '#FFFFFF' : '#8B5CF6'}
+            color={hasActiveFilters ? '#FFFFFF' : '#F97316'}
           />
         </Pressable>
 
@@ -263,7 +263,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
 
       {/* Quick Location Hint */}
       <View style={styles.locationHintRow}>
-        <Ionicons name="navigate-circle" size={15} color="#8B5CF6" />
+        <Ionicons name="navigate-circle" size={15} color="#F97316" />
         <Text style={styles.locationHintText}>Showing {filteredMandis.length} verified APMC mandis near Niphad</Text>
       </View>
 
@@ -455,12 +455,12 @@ const styles = StyleSheet.create({
     borderColor: '#EFEFEF',
   },
   filterBtnActive: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#7C3AED',
+    backgroundColor: '#F97316',
+    borderColor: '#EA580C',
   },
   mapBtn: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#7C3AED',
+    backgroundColor: '#F97316',
+    borderColor: '#EA580C',
   },
   activeFiltersRow: {
     flexDirection: 'row',
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activePill: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   activePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#C2410C',
   },
   clearAllText: {
     fontSize: 11,
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
@@ -543,12 +543,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
   },
   statusText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#C2410C',
   },
   distancePill: {
     flexDirection: 'row',
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   trendBadgeUp: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
   },
   trendBadgeDown: {
     backgroundColor: '#FEE2E2',
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   trendTextUp: {
-    color: '#7C3AED',
+    color: '#C2410C',
   },
   trendTextDown: {
     color: '#991B1B',
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     flex: 1,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     paddingVertical: 11,
     borderRadius: 14,
     alignItems: 'center',
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   pageIndicatorPill: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   pageIndicatorText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#C2410C',
   },
   emptyCard: {
     backgroundColor: ThemeColors.white,
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resetSearchBtn: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,

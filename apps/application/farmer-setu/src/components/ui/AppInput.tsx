@@ -76,8 +76,8 @@ export const AppInput = memo(
           <TextInput
             ref={internalInputRef}
             placeholderTextColor="#9CA3AF"
-            selectionColor="#8B5CF6"
-            cursorColor="#8B5CF6"
+            selectionColor="#F97316"
+            cursorColor="#F97316"
             autoCapitalize={autoCapitalize}
             autoCorrect={autoCorrect}
             spellCheck={false}
@@ -126,9 +126,9 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   inputWrapperFocused: {
-    borderColor: '#8B5CF6',
+    borderColor: '#F97316',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#8B5CF6',
+    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 8,

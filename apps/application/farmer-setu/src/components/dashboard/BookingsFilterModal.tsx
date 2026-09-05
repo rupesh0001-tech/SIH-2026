@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   chipActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
   },
   chipInactive: {
     backgroundColor: '#F3F4F6',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 13,
     borderRadius: 16,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     alignItems: 'center',
     justifyContent: 'center',
   },

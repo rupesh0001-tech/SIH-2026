@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderWidth: 1.5,
     borderColor: ThemeColors.navBorder,
-    shadowColor: '#9564DD',
+    shadowColor: '#EA580C',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
     shadowRadius: 14,

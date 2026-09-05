@@ -103,7 +103,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
           {/* Integrated Search Bar inside Header */}
           <View style={styles.searchBox}>
-            <Ionicons name="search" size={16} color="#8B5CF6" />
+            <Ionicons name="search" size={16} color="#F97316" />
             <TextInput
               placeholder="Search mandis, district or crop..."
               placeholderTextColor="#9CA3AF"
@@ -129,7 +129,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             <Ionicons
               name="options"
               size={18}
-              color={activeFiltersCount > 0 ? '#FFFFFF' : '#8B5CF6'}
+              color={activeFiltersCount > 0 ? '#FFFFFF' : '#F97316'}
             />
             {activeFiltersCount > 0 ? (
               <View style={styles.activeFilterCountDot}>
@@ -144,7 +144,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
               Alert.alert('GPS Location Calibrated', 'Accurate to 5m • Niphad, Nashik District (Live)');
             }}
             style={({ pressed }) => [styles.gpsBtn, pressed && styles.pressed]}>
-            <Ionicons name="locate" size={18} color="#8B5CF6" />
+            <Ionicons name="locate" size={18} color="#F97316" />
           </Pressable>
         </View>
 
@@ -154,7 +154,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             {/* Date Selection Filter */}
             <View style={styles.filterSectionRow}>
               <View style={styles.filterLabelCol}>
-                <Ionicons name="calendar-outline" size={13} color="#8B5CF6" />
+                <Ionicons name="calendar-outline" size={13} color="#F97316" />
                 <Text style={styles.filterSectionLabel}>Date</Text>
               </View>
               <ScrollView
@@ -187,7 +187,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             {/* Crop Filter */}
             <View style={styles.filterSectionRow}>
               <View style={styles.filterLabelCol}>
-                <Ionicons name="leaf-outline" size={13} color="#8B5CF6" />
+                <Ionicons name="leaf-outline" size={13} color="#F97316" />
                 <Text style={styles.filterSectionLabel}>Crop</Text>
               </View>
               <ScrollView
@@ -220,7 +220,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
             {/* Distance Radius & Farmers Row */}
             <View style={styles.filterSectionRow}>
               <View style={styles.filterLabelCol}>
-                <Ionicons name="navigate-circle-outline" size={13} color="#8B5CF6" />
+                <Ionicons name="navigate-circle-outline" size={13} color="#F97316" />
                 <Text style={styles.filterSectionLabel}>Radius</Text>
               </View>
               <ScrollView
@@ -354,7 +354,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
                   <Ionicons
                     name="storefront"
                     size={12}
-                    color={isSelected ? '#FFFFFF' : '#8B5CF6'}
+                    color={isSelected ? '#FFFFFF' : '#F97316'}
                   />
                   <View>
                     <Text
@@ -379,7 +379,7 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
           {/* Map Compass & Scale Info */}
           <View style={styles.mapInfoBadge}>
-            <Ionicons name="compass-outline" size={14} color="#8B5CF6" />
+            <Ionicons name="compass-outline" size={14} color="#F97316" />
             <Text style={styles.mapInfoText}>Live APMC Vector Radar • {filteredMandis.length} Mandis</Text>
           </View>
         </View>
@@ -407,20 +407,20 @@ export const MandiMapViewModal = memo(function MandiMapViewModal({
 
               <View style={styles.infoPillsRow}>
                 <View style={styles.tagPill}>
-                  <Ionicons name="leaf-outline" size={12} color="#7C3AED" />
+                  <Ionicons name="leaf-outline" size={12} color="#EA580C" />
                   <Text style={styles.tagText}>{selectedMandi.topCrop}</Text>
                 </View>
                 <View style={styles.tagPill}>
-                  <Ionicons name="people-outline" size={12} color="#8B5CF6" />
+                  <Ionicons name="people-outline" size={12} color="#F97316" />
                   <Text style={styles.tagText}>{selectedMandi.activeFarmersCount || 85} Farmers</Text>
                 </View>
                 <View style={styles.tagPill}>
                   <Ionicons name="time-outline" size={12} color="#4B5563" />
                   <Text style={styles.tagText}>{selectedMandi.estimatedQueueTime}</Text>
                 </View>
-                <View style={[styles.tagPill, { backgroundColor: '#EDE9FE' }]}>
-                  <Ionicons name="checkmark-circle" size={12} color="#7C3AED" />
-                  <Text style={[styles.tagText, { color: '#7C3AED' }]}>Gate Open</Text>
+                <View style={[styles.tagPill, { backgroundColor: '#FFEDD5' }]}>
+                  <Ionicons name="checkmark-circle" size={12} color="#C2410C" />
+                  <Text style={[styles.tagText, { color: '#C2410C' }]}>Gate Open</Text>
                 </View>
               </View>
 
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#EDE9FE',
+    borderBottomColor: '#FFEDD5',
   },
   backBtn: {
     width: 38,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 38,
     borderWidth: 1,
-    borderColor: '#EDE9FE',
+    borderColor: '#FFEDD5',
     gap: 6,
   },
   searchInput: {
@@ -488,16 +488,16 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#FED7AA',
     position: 'relative',
   },
   filterToggleActive: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#7C3AED',
+    backgroundColor: '#F97316',
+    borderColor: '#EA580C',
   },
   activeFilterCountDot: {
     position: 'absolute',
@@ -519,11 +519,11 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFEDD5',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#FED7AA',
   },
   pressed: {
     opacity: 0.8,
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDE9FE',
+    borderBottomColor: '#FFEDD5',
     gap: 6,
   },
   filterSectionRow: {
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   chipPillActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
   },
   chipPillInactive: {
     backgroundColor: '#F3F4F6',
@@ -705,25 +705,25 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(139, 92, 246, 0.22)',
+    backgroundColor: 'rgba(249, 115, 22, 0.22)',
   },
   userPulseRingInner: {
     position: 'absolute',
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(139, 92, 246, 0.35)',
+    backgroundColor: 'rgba(249, 115, 22, 0.35)',
   },
   userDot: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
     borderColor: '#FFFFFF',
-    shadowColor: '#8B5CF6',
+    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
   userLabelCard: {
     position: 'absolute',
     top: 28,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -767,11 +767,11 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 4,
     borderWidth: 1.5,
-    borderColor: '#EDE9FE',
+    borderColor: '#FFEDD5',
   },
   pinBadgeSelected: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#7C3AED',
+    backgroundColor: '#F97316',
+    borderColor: '#EA580C',
     transform: [{ scale: 1.1 }],
   },
   pinBadgeText: {
@@ -786,11 +786,11 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     marginTop: 2,
   },
   pinAnchorDotSelected: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#EA580C',
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 5,
     borderWidth: 1,
-    borderColor: '#EDE9FE',
+    borderColor: '#FFEDD5',
   },
   mapInfoText: {
     fontSize: 10,
@@ -826,13 +826,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 16,
-    shadowColor: '#8B5CF6',
+    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 5,
     borderWidth: 1.5,
-    borderColor: '#EDE9FE',
+    borderColor: '#FFEDD5',
   },
   detailHeader: {
     flexDirection: 'row',
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
   detailTrend: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#EA580C',
     marginTop: 2,
   },
   infoPillsRow: {
@@ -893,11 +893,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F97316',
     paddingVertical: 12,
     borderRadius: 14,
     gap: 6,
-    shadowColor: '#8B5CF6',
+    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,

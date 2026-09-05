@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDFDF0',
   },
   bgLavender: {
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FFF7ED',
   },
   bgPeach: {
     backgroundColor: '#FFF7EB',
