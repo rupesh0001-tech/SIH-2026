@@ -2,8 +2,11 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
+import { useUserLocation } from '@/hooks/useUserLocation';
 
 export const WeatherWidget = memo(function WeatherWidget() {
+  const { locationName } = useUserLocation();
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -12,7 +15,7 @@ export const WeatherWidget = memo(function WeatherWidget() {
             <Ionicons name="sunny" size={24} color="#F59E0B" />
             <View>
               <Text style={styles.tempText}>28°C • Clear Sky</Text>
-              <Text style={styles.locationText}>Nashik Mandi Zone (Humidity: 48%)</Text>
+              <Text style={styles.locationText}>{locationName || 'Nashik Mandi Zone'} (Humidity: 48%)</Text>
             </View>
           </View>
           <View style={styles.badge}>

@@ -12,90 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { MandiFilterModal } from './MandiFilterModal';
 import { MandiMapViewModal } from './MandiMapViewModal';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { getNearbyMandisForUser, DEFAULT_MOCK_MANDIS } from '@/utils/location.utils';
 import type { MandiItem, MandiFilterCriteria } from '@/interfaces';
 
 const ITEMS_PER_PAGE = 3;
-
-const STATIC_MANDIS: MandiItem[] = [
-  {
-    id: 'mandi-1',
-    name: 'Nashik APMC Mandi',
-    district: 'Nashik, Maharashtra',
-    distanceKm: 12.4,
-    topCrop: 'Onion (Red) & Grapes',
-    modalPrice: '₹2,680 / qtl',
-    priceTrend: '+₹120 today',
-    trendDirection: 'up',
-    estimatedQueueTime: '25 mins wait',
-    isOpen: true,
-    activeFarmersCount: 142,
-  },
-  {
-    id: 'mandi-2',
-    name: 'Lasalgaon APMC Market',
-    district: 'Lasalgaon, Maharashtra',
-    distanceKm: 28.1,
-    topCrop: 'Onion (Garva) & Wheat',
-    modalPrice: '₹2,850 / qtl',
-    priceTrend: '+₹190 today',
-    trendDirection: 'up',
-    estimatedQueueTime: '45 mins wait',
-    isOpen: true,
-    activeFarmersCount: 210,
-  },
-  {
-    id: 'mandi-3',
-    name: 'Pune Gultekdi Market Yard',
-    district: 'Pune, Maharashtra',
-    distanceKm: 42.0,
-    topCrop: 'Soybean & Tomato',
-    modalPrice: '₹4,920 / qtl',
-    priceTrend: '-₹40 today',
-    trendDirection: 'down',
-    estimatedQueueTime: '15 mins wait',
-    isOpen: true,
-    activeFarmersCount: 88,
-  },
-  {
-    id: 'mandi-4',
-    name: 'Nagpur Cotton APMC Hub',
-    district: 'Nagpur, Maharashtra',
-    distanceKm: 85.0,
-    topCrop: 'Cotton (Long Staple)',
-    modalPrice: '₹7,150 / qtl',
-    priceTrend: '+₹250 today',
-    trendDirection: 'up',
-    estimatedQueueTime: '30 mins wait',
-    isOpen: true,
-    activeFarmersCount: 165,
-  },
-  {
-    id: 'mandi-5',
-    name: 'Ahmednagar Grain Mandi',
-    district: 'Ahmednagar, Maharashtra',
-    distanceKm: 55.0,
-    topCrop: 'Maize & Wheat',
-    modalPrice: '₹2,340 / qtl',
-    priceTrend: '+₹60 today',
-    trendDirection: 'up',
-    estimatedQueueTime: '20 mins wait',
-    isOpen: true,
-    activeFarmersCount: 75,
-  },
-  {
-    id: 'mandi-6',
-    name: 'Pimpalgaon Onion Yard',
-    district: 'Pimpalgaon, Maharashtra',
-    distanceKm: 18.5,
-    topCrop: 'Onion & Tomato',
-    modalPrice: '₹2,720 / qtl',
-    priceTrend: '+₹80 today',
-    trendDirection: 'up',
-    estimatedQueueTime: '20 mins wait',
-    isOpen: true,
-    activeFarmersCount: 115,
-  },
-];
 
 const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
   searchQuery: '',
@@ -109,13 +30,19 @@ const INITIAL_FILTER_CRITERIA: MandiFilterCriteria = {
 };
 
 export const MandiSectionView = memo(function MandiSectionView() {
+  const { coordinates: userCoords, locationName, status: locationStatus } = useUserLocation();
   const [criteria, setCriteria] = useState<MandiFilterCriteria>(INITIAL_FILTER_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Dynamic nearby mandis computed from user's live coordinates
+  const dynamicMandis = useMemo(() => {
+    return getNearbyMandisForUser(userCoords);
+  }, [userCoords]);
+
   const filteredMandis = useMemo(() => {
-    return STATIC_MANDIS.filter((mandi) => {
+    return dynamicMandis.filter((mandi) => {
       // 1. Text Search query
       if (criteria.searchQuery.trim()) {
         const query = criteria.searchQuery.toLowerCase();
@@ -409,7 +336,7 @@ export const MandiSectionView = memo(function MandiSectionView() {
       <MandiMapViewModal
         visible={mapModalVisible}
         onClose={() => setMapModalVisible(false)}
-        mandis={STATIC_MANDIS}
+        mandis={dynamicMandis}
         onSelectMandi={(mandi) => handleBookSlot(mandi)}
       />
     </ScrollView>
