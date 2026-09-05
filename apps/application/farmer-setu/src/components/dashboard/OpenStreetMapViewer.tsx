@@ -1,14 +1,17 @@
 import React, { memo, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { UserCoordinates, MandiItem } from '@/interfaces';
 
 const MapWebView = WebView as any;
 
+export type MapLabelMode = 'price' | 'name' | 'crop';
+
 interface OpenStreetMapViewerProps {
   userCoords: UserCoordinates;
   mandis: MandiItem[];
   selectedMandiId: string | null;
+  labelMode?: MapLabelMode;
   onSelectMandi: (mandi: MandiItem) => void;
   recenterTrigger: number;
 }
@@ -17,12 +20,14 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
   userCoords,
   mandis,
   selectedMandiId,
+  labelMode = 'price',
   onSelectMandi,
   recenterTrigger,
 }: OpenStreetMapViewerProps) {
   const webViewRef = useRef<any>(null);
 
-  // Generate self-contained OpenStreetMap + Leaflet HTML with zero API keys required
+  // Generate self-contained OpenStreetMap + Leaflet HTML
+  // Note: selectedMandiId is NOT in the dependencies so WebView NEVER reloads on selection!
   const mapHtml = useMemo(() => {
     const mandisJson = JSON.stringify(
       mandis.map((m) => ({
@@ -76,15 +81,15 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       align-items: center;
       justify-content: center;
       color: #FFF;
-      font-size: 11px;
-      font-weight: bold;
+      font-size: 10px;
+      font-weight: 800;
     }
     @keyframes pulse {
       0% { transform: scale(0.6); opacity: 1; }
       100% { transform: scale(1.4); opacity: 0; }
     }
 
-    /* Mandi / Shop Marker */
+    /* Mandi Marker (No emojis, sleek native badge) */
     .mandi-pin-wrap {
       display: flex;
       flex-direction: column;
@@ -100,19 +105,23 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       color: #15803D;
       border: 1.5px solid #16A34A;
       padding: 4px 8px;
-      border-radius: 14px;
+      border-radius: 12px;
       font-weight: 800;
       font-size: 11px;
       box-shadow: 0 3px 8px rgba(0,0,0,0.18);
       white-space: nowrap;
       transition: all 0.2s ease;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .mandi-pin-badge.selected {
       background: #16A34A;
       color: #FFFFFF;
       border-color: #15803D;
-      transform: scale(1.12);
+      transform: scale(1.15);
       box-shadow: 0 4px 12px rgba(22, 163, 74, 0.45);
+      z-index: 1000;
     }
     .mandi-pin-stem {
       width: 0;
@@ -133,7 +142,6 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       margin-top: 1px;
     }
 
-    /* Custom Leaflet Controls */
     .leaflet-control-attribution {
       font-size: 9px !important;
       background: rgba(255,255,255,0.8) !important;
@@ -156,10 +164,11 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
     var userLat = ${userCoords.latitude};
     var userLng = ${userCoords.longitude};
     var mandis = ${mandisJson};
-    var selectedId = ${JSON.stringify(selectedMandiId)};
+    var currentLabelMode = '${labelMode}';
+    var selectedId = null;
     var markersMap = {};
 
-    // 1. Initialize Map with OpenStreetMap Standard Layer (100% Free & Open Source)
+    // 1. Initialize Map
     var map = L.map('map', {
       center: [userLat, userLng],
       zoom: 12,
@@ -167,34 +176,50 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       attributionControl: true
     });
 
-    // High quality OpenStreetMap Tiles
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // 2. User Live Location Marker
+    // 2. User Location Marker
     var userIcon = L.divIcon({
       className: 'user-pulse-marker',
-      html: '<div class="user-pulse-ring"></div><div class="user-core-dot">🌾</div>',
+      html: '<div class="user-pulse-ring"></div><div class="user-core-dot">GPS</div>',
       iconSize: [44, 44],
       iconAnchor: [22, 22]
     });
     var userMarker = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-    userMarker.bindTooltip("<b>Your Farm Location</b><br/>Live GPS Position", { offset: [0, -12], direction: 'top' });
+    userMarker.bindTooltip("<b>Farm Location</b><br/>Current GPS", { offset: [0, -12], direction: 'top' });
 
-    // 3. Render Mandi / Shop Markers
+    // Helper to format marker label text based on mode
+    function getLabelText(m) {
+      if (currentLabelMode === 'name') {
+        return m.name.split(' ')[0] + ' APMC';
+      } else if (currentLabelMode === 'crop') {
+        return m.crop ? m.crop.split(',')[0].split('&')[0].trim() : 'Crops';
+      } else {
+        // Price mode
+        return m.price ? m.price.split(' ')[0] : 'Open';
+      }
+    }
+
+    // 3. Render Mandi Markers
     function renderMarkers() {
+      // Clear existing
+      Object.keys(markersMap).forEach(function(k) {
+        map.removeLayer(markersMap[k]);
+      });
+      markersMap = {};
+
       mandis.forEach(function(m) {
         var isSel = (m.id === selectedId);
-        var priceTag = m.price ? m.price.split(' ')[0] : 'Open';
+        var label = getLabelText(m);
 
         var pinIcon = L.divIcon({
           className: 'custom-mandi-icon',
           html: '<div class="mandi-pin-wrap" id="pin-' + m.id + '">' +
                   '<div class="mandi-pin-badge ' + (isSel ? 'selected' : '') + '">' +
-                    '<span>🏪</span>' +
-                    '<span>' + priceTag + '</span>' +
+                    '<span id="txt-' + m.id + '">' + label + '</span>' +
                   '</div>' +
                   '<div class="mandi-pin-stem"></div>' +
                   '<div class="mandi-pin-shadow"></div>' +
@@ -205,8 +230,9 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
 
         var marker = L.marker([m.lat, m.lng], { icon: pinIcon }).addTo(map);
         
-        marker.on('click', function() {
-          selectMandi(m.id);
+        marker.on('click', function(e) {
+          L.DomEvent.stopPropagation(e);
+          selectMandi(m.id, true);
           sendToNative({ type: 'SELECT_MANDI', id: m.id });
         });
 
@@ -216,8 +242,8 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
 
     renderMarkers();
 
-    // 4. Update Selection
-    function selectMandi(id) {
+    // 4. Select and Zoom on FIRST click
+    function selectMandi(id, shouldZoom) {
       selectedId = id;
       Object.keys(markersMap).forEach(function(mId) {
         var el = document.querySelector('#pin-' + mId + ' .mandi-pin-badge');
@@ -231,17 +257,27 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       });
 
       var target = mandis.find(function(m) { return m.id === id; });
-      if (target) {
-        map.flyTo([target.lat, target.lng], 13, { duration: 0.8 });
+      if (target && shouldZoom !== false) {
+        map.flyTo([target.lat, target.lng], 14, { duration: 0.6 });
       }
     }
 
-    // 5. Recenter Function
-    function recenterToUser() {
-      map.flyTo([userLat, userLng], 12, { duration: 0.8 });
+    // 5. Update Label Mode
+    function setLabelMode(mode) {
+      currentLabelMode = mode;
+      mandis.forEach(function(m) {
+        var txtEl = document.getElementById('txt-' + m.id);
+        if (txtEl) {
+          txtEl.innerText = getLabelText(m);
+        }
+      });
     }
 
-    // Post message helper
+    // 6. Recenter Function
+    function recenterToUser() {
+      map.flyTo([userLat, userLng], 12, { duration: 0.6 });
+    }
+
     function sendToNative(data) {
       if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
         window.ReactNativeWebView.postMessage(JSON.stringify(data));
@@ -250,35 +286,27 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       }
     }
 
-    // Listen for messages from React Native
-    window.addEventListener('message', function(event) {
+    function handleIncomingMessage(event) {
       try {
         var msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (msg.type === 'SELECT_MANDI') {
-          selectMandi(msg.id);
+          selectMandi(msg.id, true);
+        } else if (msg.type === 'SET_LABEL_MODE') {
+          setLabelMode(msg.mode);
         } else if (msg.type === 'RECENTER_USER') {
           recenterToUser();
         }
       } catch (e) {}
-    });
+    }
 
-    document.addEventListener('message', function(event) {
-      try {
-        var msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (msg.type === 'SELECT_MANDI') {
-          selectMandi(msg.id);
-        } else if (msg.type === 'RECENTER_USER') {
-          recenterToUser();
-        }
-      } catch (e) {}
-    });
+    window.addEventListener('message', handleIncomingMessage);
+    document.addEventListener('message', handleIncomingMessage);
   </script>
 </body>
 </html>
     `;
-  }, [userCoords.latitude, userCoords.longitude, mandis, selectedMandiId]);
+  }, [userCoords.latitude, userCoords.longitude, mandis]);
 
-  // Handle message from map WebView to React Native
   const handleMessage = useCallback(
     (event: any) => {
       try {
@@ -290,9 +318,7 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
             onSelectMandi(target);
           }
         }
-      } catch {
-        // Safe JSON parsing
-      }
+      } catch {}
     },
     [mandis, onSelectMandi]
   );
@@ -304,7 +330,7 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
     }
   }, [recenterTrigger]);
 
-  // Selection change effect
+  // Dynamic selection change without reloading
   useEffect(() => {
     if (selectedMandiId && webViewRef.current) {
       webViewRef.current.postMessage(
@@ -312,6 +338,15 @@ export const OpenStreetMapViewer = memo(function OpenStreetMapViewer({
       );
     }
   }, [selectedMandiId]);
+
+  // Dynamic label mode change without reloading
+  useEffect(() => {
+    if (webViewRef.current) {
+      webViewRef.current.postMessage(
+        JSON.stringify({ type: 'SET_LABEL_MODE', mode: labelMode })
+      );
+    }
+  }, [labelMode]);
 
   return (
     <View style={styles.container}>

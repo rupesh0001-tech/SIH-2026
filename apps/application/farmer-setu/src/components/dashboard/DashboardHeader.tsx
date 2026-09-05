@@ -6,6 +6,9 @@ import { ThemeColors } from '@/constants/theme';
 interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
+  farmerCode?: string | null;
+  isProfileComplete?: boolean;
+  onKycPress?: () => void;
   showSearchButton?: boolean;
   onSearchPress?: () => void;
   onNotificationPress?: () => void;
@@ -15,6 +18,9 @@ interface DashboardHeaderProps {
 export const DashboardHeader = memo(function DashboardHeader({
   title,
   subtitle,
+  farmerCode,
+  isProfileComplete = true,
+  onKycPress,
   showSearchButton = false,
   onSearchPress,
   onNotificationPress,
@@ -23,6 +29,26 @@ export const DashboardHeader = memo(function DashboardHeader({
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
+        {farmerCode ? (
+          <View style={styles.badgeRow}>
+            <View style={styles.farmerIdPill}>
+              <Text style={styles.farmerIdText}>ID: {farmerCode}</Text>
+            </View>
+            {!isProfileComplete ? (
+              <Pressable
+                onPress={onKycPress}
+                style={({ pressed }) => [styles.kycPendingPill, pressed && styles.buttonPressed]}>
+                <Ionicons name="warning" size={11} color="#B45309" />
+                <Text style={styles.kycPendingText}>KYC Incomplete</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.kycVerifiedPill}>
+                <Ionicons name="checkmark-circle" size={11} color="#15803D" />
+                <Text style={styles.kycVerifiedText}>Verified</Text>
+              </View>
+            )}
+          </View>
+        ) : null}
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
@@ -106,5 +132,57 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: ThemeColors.lavender,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  farmerIdPill: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  farmerIdText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803D',
+    letterSpacing: 0.2,
+  },
+  kycPendingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  kycPendingText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  kycVerifiedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  kycVerifiedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
   },
 });

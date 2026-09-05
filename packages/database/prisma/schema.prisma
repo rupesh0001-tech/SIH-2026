@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum FarmerIdType {
+  AADHAAR
+  PAN
+  DRIVING_LICENSE
+}
+
 enum Role {
   FARMER
   MANDI_OPERATOR
@@ -76,32 +82,45 @@ model User {
 }
 
 model FarmerProfile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String          @id @default(cuid())
+  userId             String          @unique
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Formatted Sequential Farmer ID (e.g. FAR001, FAR002)
+  farmerCode         String?         @unique
+
+  // Personal & KYC Identity Information
+  dob                String?         // YYYY-MM-DD
+  address            String?         // Full Address
+  idType             FarmerIdType?   // AADHAAR, PAN, DRIVING_LICENSE
+  idNumber           String?
+  avatarUrl          String?
+  isProfileComplete  Boolean         @default(false)
+
   // Detailed Address Fields
-  addressLine1    String?
-  addressLine2    String?
-  village         String?
-  taluka          String?
-  district        String?
-  state           String?
-  pincode         String?
+  addressLine1       String?
+  addressLine2       String?
+  village            String?
+  taluka             String?
+  district           String?
+  state              String?
+  pincode            String?
   
   // Farm & Agriculture Details
-  landSizeAcres   Float?
-  mainCrops       String[]  @default([])
-  secondaryCrops  String[]  @default([])
-  irrigationType  String?   // e.g., Drip, Sprinkler, Well, Canal, Rainfed
-  farmLocation    String?   // GPS / Coordinates or Landmark
+  landSizeAcres      Float?
+  mainCrops          String[]        @default([])
+  secondaryCrops     String[]        @default([])
+  irrigationType     String?         // e.g., Drip, Sprinkler, Well, Canal, Rainfed
+  farmLocation       String?         // GPS / Coordinates or Landmark
   
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   @@index([userId])
+  @@index([farmerCode])
   @@index([district, state])
   @@index([pincode])
+  @@index([isProfileComplete])
 }
 
 model RefreshToken {
@@ -147,35 +166,58 @@ model PasswordResetToken {
 }
 
 model MandiProfile {
-  id               String               @id @default(cuid())
-  userId           String               @unique
-  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mandiName        String?
-  apmcCode         String?              @unique
-  address          String?
-  district         String?
-  state            String?
-  operatingHours   String?              @default("08:00 AM - 06:00 PM (Mon-Sat)")
-  aadhaarNumber    String?
-  aadhaarVerified  Boolean              @default(false)
-  aadhaarDocUrl    String?
-  avatarUrl        String?
-  approvalStatus   MandiApprovalStatus  @default(PENDING_ONBOARDING)
-  rejectionReason  String?
-  approvedAt       DateTime?
-  rating           Float                @default(4.8)
-  totalReviews     Int                  @default(0)
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                  String               @id @default(cuid())
+  userId              String               @unique
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mandiName           String?
+  apmcCode            String?              @unique
+  address             String?
+  district            String?
+  state               String?
+  operatingHours      String?              @default("08:00 AM - 06:00 PM (Mon-Sat)")
+  
+  // Real-time Geo Coordinates & APMC Auction Metrics
+  latitude            Float?
+  longitude           Float?
+  topCrop             String?              // e.g. "Onion (Red) & Grapes"
+  acceptedCrops       String[]             @default([]) // Official commodities accepted at this mandi
+  modalPrice          String?              // e.g. "₹2,680 / qtl"
+  priceTrend          String?              // e.g. "+₹120 today"
+  trendDirection      String?              @default("up")
+  estimatedQueueTime  String?              @default("20 mins wait")
+  activeFarmersCount  Int                  @default(85)
+  isOpen              Boolean              @default(true)
 
-  slots            MandiSlot[]
-  bookings         Booking[]
-  legalDocs        MandiLegalDoc[]
+  aadhaarNumber       String?
+  aadhaarVerified     Boolean              @default(false)
+  aadhaarDocUrl       String?
+  avatarUrl           String?
+  approvalStatus      MandiApprovalStatus  @default(PENDING_ONBOARDING)
+  rejectionReason     String?
+  approvedAt          DateTime?
+  rating              Float                @default(4.8)
+  totalReviews        Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  slots               MandiSlot[]
+  bookings            Booking[]
+  legalDocs           MandiLegalDoc[]
 
   @@index([userId])
   @@index([apmcCode])
   @@index([approvalStatus])
   @@index([district, state])
+}
+
+model Commodity {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String?  // e.g. "Cereals", "Pulses", "Vegetables", "Fruits", "Oilseeds", "Spices", "Cash Crops"
+  defaultUnit String   @default("kg")
+  createdAt   DateTime @default(now())
+
+  @@index([name])
 }
 
 model MandiSlot {

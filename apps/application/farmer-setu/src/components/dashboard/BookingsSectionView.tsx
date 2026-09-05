@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo } from 'react';
+import React, { memo, useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '@/constants/theme';
 import { BookingsFilterModal } from './BookingsFilterModal';
+import { useAuth } from '@/context/AuthContext';
+import { getFarmerBookingsApi } from '@/services/farmer.service';
 import type { BookingItem, BookingStatus, BookingsFilterCriteria } from '@/interfaces';
 
 const ITEMS_PER_PAGE = 3;
@@ -21,7 +23,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-9402',
     cropName: 'Onion',
     cropVariety: 'Nashik Red A-Grade',
-    mandiName: 'Nashik APMC Mandi',
+    mandiName: 'Morwadi APMC Sub-Yard',
     gateNo: 'Gate 3 (Bay 12)',
     dateString: '08/09/2026',
     timeSlot: '08:30 AM – 10:00 AM',
@@ -53,7 +55,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-7612',
     cropName: 'Wheat',
     cropVariety: 'Sharbati Premium',
-    mandiName: 'Lasalgaon Mandi',
+    mandiName: 'Pimpri Central Mandi',
     gateNo: 'Gate 2',
     dateString: '15/09/2026',
     timeSlot: '02:00 PM – 03:30 PM',
@@ -69,7 +71,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-6504',
     cropName: 'Cotton',
     cropVariety: 'Long Staple BT',
-    mandiName: 'Nagpur APMC Hub',
+    mandiName: 'Chakan Onion Hub',
     gateNo: 'Gate 4',
     dateString: '02/09/2026',
     timeSlot: '09:00 AM – 11:00 AM',
@@ -85,7 +87,7 @@ const STATIC_ALL_BOOKINGS: BookingItem[] = [
     bookingCode: 'BK-5520',
     cropName: 'Maize',
     cropVariety: 'Yellow Hybrid',
-    mandiName: 'Ahmednagar Mandi',
+    mandiName: 'Bhosari MIDC Yard',
     gateNo: 'Gate 1',
     dateString: '18/09/2026',
     timeSlot: '11:30 AM – 01:00 PM',
@@ -138,12 +140,60 @@ const getStatusBadge = (status: BookingStatus) => {
 };
 
 export const BookingsSectionView = memo(function BookingsSectionView() {
+  const { token } = useAuth();
   const [criteria, setCriteria] = useState<BookingsFilterCriteria>(INITIAL_BOOKING_CRITERIA);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [liveBookings, setLiveBookings] = useState<BookingItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadBookings() {
+      if (!token) return;
+      setIsLoading(true);
+      try {
+        const res = await getFarmerBookingsApi(token);
+        if (isMounted && res.success && res.data && res.data.bookings && res.data.bookings.length > 0) {
+          const mapped: BookingItem[] = res.data.bookings.map((b: any) => ({
+            id: b.id,
+            bookingCode: b.token || `BK-${b.id.slice(0, 4)}`,
+            cropName: b.crop,
+            cropVariety: b.variety || 'A-Grade',
+            mandiName: b.mandiProfile?.mandiName || 'APMC Mandi',
+            gateNo: 'Gate 1 (E-Weighbridge)',
+            dateString: b.slot?.date || new Date().toISOString().split('T')[0],
+            timeSlot: b.slot ? `${b.slot.startTime} - ${b.slot.endTime}` : '08:00 AM - 11:00 AM',
+            status:
+              b.status === 'COMPLETED'
+                ? 'completed'
+                : b.status === 'VERIFIED' || b.status === 'ARRIVED'
+                ? 'in_progress'
+                : b.status === 'CANCELLED' || b.status === 'REJECTED'
+                ? 'cancelled'
+                : 'confirmed',
+            statusLabel: b.status,
+            progressPercent: b.status === 'COMPLETED' ? 100 : b.status === 'VERIFIED' ? 65 : 25,
+            progressLabel: b.status === 'COMPLETED' ? 'Auction Settled' : b.status === 'VERIFIED' ? 'Assay in Progress' : 'Gate Pass Issued',
+            inspectorName: 'APMC Officer',
+            quantityQuintals: b.quantityQuintals,
+          }));
+          setLiveBookings(mapped);
+        }
+      } catch {
+        // Fallback
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadBookings();
+    return () => { isMounted = false; };
+  }, [token]);
+
+  const allBookings = liveBookings.length > 0 ? liveBookings : STATIC_ALL_BOOKINGS;
 
   const filteredBookings = useMemo(() => {
-    return STATIC_ALL_BOOKINGS.filter((b) => {
+    return allBookings.filter((b) => {
       // 1. Search Query (ID, Crop, Mandi)
       if (criteria.searchQuery.trim()) {
         const query = criteria.searchQuery.toLowerCase();

@@ -16,7 +16,9 @@ vi.mock("../src/lib/prisma.js", () => {
       farmerProfile: {
         findUnique: vi.fn(),
         create: vi.fn(),
+        update: vi.fn(),
         upsert: vi.fn(),
+        count: vi.fn(),
       },
       $transaction: vi.fn(),
     },
@@ -57,6 +59,8 @@ describe("Farmer Profile Management Suite (/api/v1/farmer/*)", () => {
         farmerProfile: {
           id: "fp-123",
           userId: farmerUserId,
+          farmerCode: "FAR001",
+          isProfileComplete: true,
           addressLine1: "House No 42",
           addressLine2: "Near Gram Panchayat",
           village: "Lasalgaon",
