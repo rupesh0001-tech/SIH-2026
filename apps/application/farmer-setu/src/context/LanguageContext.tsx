@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TRANSLATIONS, SUPPORTED_LANGUAGES } from '@/constants/translations';
+import { getStorageItem, setStorageItem } from '@/utils/storage';
 import type { SupportedLanguage, LanguageContextType } from '@/interfaces';
 
 const LANGUAGE_STORAGE_KEY = '@farmer_setu_user_language';
@@ -15,12 +15,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadSavedLanguage() {
       try {
-        const savedLang = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+        const savedLang = await getStorageItem(LANGUAGE_STORAGE_KEY);
         if (savedLang === 'en' || savedLang === 'mr' || savedLang === 'hi') {
           setLanguageState(savedLang);
         }
       } catch (err) {
-        console.warn('Failed to read saved language:', err);
+        // Fallback safely handled in storage utility
       } finally {
         setIsReady(true);
       }
@@ -32,9 +32,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(async (newLang: SupportedLanguage) => {
     try {
       setLanguageState(newLang);
-      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, newLang);
+      await setStorageItem(LANGUAGE_STORAGE_KEY, newLang);
     } catch (err) {
-      console.warn('Failed to save language preference:', err);
+      // Fallback safely handled in storage utility
     }
   }, []);
 
